@@ -10,9 +10,15 @@ synth_ip [get_ips sys_pll]
 
 read_xdc [glob ../constr/*.xdc]
 synth_design -top top
+write_checkpoint -force post_synth.dcp
+report_timing_summary -file timing_syn.rpt
 
 opt_design
 place_design
+write_checkpoint -force post_place.dcp
+report_timing -file timing_place.rpt
 phys_opt_design
 route_design
+write_checkpoint -force post_route.dcp
+report_timing_summary -file timing_summary.rpt
 write_bitstream -force output.bit
