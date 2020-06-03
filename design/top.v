@@ -88,6 +88,29 @@ module top(
       vin_data <= vin_data_i;
    end
 
+   // Gray calculation
+   wire [7:0] gray;
+   rgb_to_gray i_rgb_to_gray (
+      .r_i(vin_data[23:16]),
+      .g_i(vin_data[15:8]),
+      .b_i(vin_data[7:0]),
+      .k_o(gray)
+   );
+
+   assign vout_clk_o = vin_clk_i;
+   reg vout_hs, vout_vs, vout_de;
+   reg [23:0] vout_data;
+   always @(posedge vin_clk_i) begin
+      vout_hs <= vin_hs;
+      vout_vs <= vin_vs;
+      vout_de <= vin_de;
+      if (~button_ni[1]) begin
+         vout_data <= vin_data;
+      end else begin
+         vout_data <= {3{gray}};
+      end
+   end
+
    // HDMI out
    adv7511 i_adv7511 (
       .clk_i (clk_i2c),
@@ -100,17 +123,6 @@ module top(
       vout_vs_o <= vout_vs;
       vout_de_o <= vout_de;
       vout_data_o <= vout_data;
-   end
-
-   // HDMI middle buffer
-   assign vout_clk_o = vin_clk_i;
-   reg vout_hs, vout_vs, vout_de;
-   reg [23:0] vout_data;
-   always @(posedge vin_clk_i) begin
-      vout_hs <= vin_hs;
-      vout_vs <= vin_vs;
-      vout_de <= vin_de;
-      vout_data <= vin_data;
    end
 
 endmodule
