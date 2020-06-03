@@ -1,7 +1,6 @@
 module top(
    input clk_i_p,
    input clk_i_n,
-   input rst_ni,
    output [3:0] led_o,
    input [3:0] button_ni,
 
@@ -27,6 +26,8 @@ module top(
    output fan_no
 );
 
+   wire rst_ni = button_ni[0];
+
    assign fan_no = 0;
 
    wire clk_video; // 148.571MHz
@@ -35,6 +36,7 @@ module top(
    sys_pll i_sys_pll (
       .clk_in1_p (clk_i_p),
       .clk_in1_n (clk_i_n),
+      .reset (~rst_ni),
       .clk_out1 (clk_video),
       .clk_out2 (clk_i2c),
       .locked (pll_locked)
@@ -70,12 +72,25 @@ module top(
    assign led_o[3] = ~b;
 
    // HDMI in
-   assign vout_de_o = 0;
-   assign vout_hs_o = 0;
-   assign vout_vs_o = 0;
-   assign vout_data_o = 24'b0;
+   assign vin_rst_no = 1;
 
    // HDMI out
-   assign vin_rst_no = 1;
+   assign vout_clk_o = clk_video;
+   color_bar i_color_bar (
+      .clk (clk_video),
+      .rst (~rst_ni),
+      .hs (vout_hs_o),
+      .vs (vout_vs_o),
+      .de (vout_de_o),
+      .rgb_r (vout_data_o[23:16]),
+      .rgb_g (vout_data_o[15:8]),
+      .rgb_b (vout_data_o[7:0])
+   );
+   adv7511 i_adv7511 (
+      .clk_i (clk_i2c),
+      .rst_ni,
+      .vout_scl_io,
+      .vout_sda_io
+   );
 
 endmodule

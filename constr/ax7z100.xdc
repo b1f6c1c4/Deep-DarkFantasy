@@ -12,12 +12,6 @@ set_property PACKAGE_PIN F9 [get_ports clk_i_p]
 set_property IOSTANDARD DIFF_SSTL15 [get_ports clk_i_p]
 
 
-# System main reset
-
-set_property PACKAGE_PIN D21 [get_ports rst_ni]
-set_property IOSTANDARD LVCMOS33 [get_ports rst_ni]
-
-
 # LED
 
 set_property PACKAGE_PIN AJ16 [get_ports {led_o[0]}]
