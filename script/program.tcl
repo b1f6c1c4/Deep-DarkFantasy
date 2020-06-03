@@ -10,4 +10,3 @@ set_property PROGRAM.FILE {output.bit} [get_hw_devices xc7z100_1]
 
 program_hw_devices [get_hw_devices xc7z100_1]
 refresh_hw_device [get_hw_devices xc7z100_1]
-exit
