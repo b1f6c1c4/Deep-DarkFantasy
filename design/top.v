@@ -73,19 +73,19 @@ module top(
 
    // HDMI in
    assign vin_rst_no = 1;
+   sil9013 i_sil9013 (
+      .clk_i (clk_i2c),
+      .rst_ni,
+      .vin_scl_io,
+      .vin_sda_io
+   );
 
    // HDMI out
-   assign vout_clk_o = clk_video;
-   color_bar i_color_bar (
-      .clk (clk_video),
-      .rst (~rst_ni),
-      .hs (vout_hs_o),
-      .vs (vout_vs_o),
-      .de (vout_de_o),
-      .rgb_r (vout_data_o[23:16]),
-      .rgb_g (vout_data_o[15:8]),
-      .rgb_b (vout_data_o[7:0])
-   );
+   assign vout_clk_o = vin_clk_i;
+   assign vout_hs_o = vin_hs_i;
+   assign vout_vs_o = vin_vs_i;
+   assign vout_de_o = vin_de_i;
+   assign vout_data_o = vin_data_i;
    adv7511 i_adv7511 (
       .clk_i (clk_i2c),
       .rst_ni,

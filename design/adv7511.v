@@ -6,9 +6,11 @@ module adv7511(
 );
 
    wire [9:0] i;
+   reg [7:0] dev;
    reg [15:0] a;
    reg [7:0] d;
    always @(*) begin
+      dev = 8'h72;
       case(i)
          // Power up
          00: begin a = 16'h0041; d = 8'b00010000; end
@@ -28,18 +30,19 @@ module adv7511(
          11: begin a = 16'h0055; d = 8'b00010010; end
          // Hot plug detection
          12: begin a = 16'h00d6; d = 8'b11000000; end
+         default: begin dev = 8'hff; a = 16'hffff; d = 8'hff; end
       endcase
    end
 
    i2c_config i_i2c_config (
       .rst (~rst_ni),
-      .clk (clk_i2c),
+      .clk (clk_i),
       .clk_div_cnt (16'd499),
       .i2c_addr_2byte (1'b0),
       .lut_index (i),
-      .lut_dev_addr (8'h72),
-      .lut_addr (a),
-      .lut_data (d),
+      .lut_dev_addr (dev),
+      .lut_reg_addr (a),
+      .lut_reg_data (d),
       .error (),
       .done (),
       .i2c_scl (vout_scl_io),
