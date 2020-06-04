@@ -10,4 +10,7 @@ build/output.bit: script/run.tcl $(DESIGN) $(CONSTR) $(XCI)
 	mkdir -p build/
 	(cd build/ && $(VIVADO) -mode batch -source ../$< 2>&1) | ./script/log_highlight.sh
 
-.PHONY: program
+clean:
+	rm -rf build/
+
+.PHONY: program clean
