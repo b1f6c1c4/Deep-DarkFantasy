@@ -26,8 +26,9 @@ module top(
    output fan_no
 );
 
-   localparam KN = 21;
-   localparam DELAYS = (KN-1)/2 + 1;
+   localparam WN = 1920;
+   localparam KN = 10;
+   localparam DELAYS = WN*KN+1;
 
    wire rst_n = button_ni[0];
 
@@ -71,89 +72,49 @@ module top(
       .k_o(gray)
    );
 
-   // Convolution
-   reg [7:0] conv_d[0:KN-1];
-   reg [13:0] conv_dm[0:KN-1];
+   // Block buffer
+   reg vin_hs_r;
+   reg [31:0] h_cur, hb_cur, vp_cur;
+   always @(posedge vin_clk_i) begin
+      if (vin_vs) begin
+         h_cur <= 0;
+         hb_cur <= 0;
+         vp_cur <= 0;
+         vin_hs_r <= 0;
+      end else begin
+         vin_hs_r <= vin_hs;
+         if (vin_hs && ~vin_hs_r) begin
+            vp_cur <= (vp_cur == KN-1) ? 0 : vp_cur + 1;
+         end
+         if (vin_de) begin
+            if (h_cur == KN-1) begin
+               h_cur <= 0;
+               hb_cur <= hb_cur + 1;
+            end else begin
+               h_cur <= h_cur + 1;
+            end
+         end
+      end
+   end
+
+   reg [31:0] blk_buf_a[0:WN/KN-1];
+   reg [31:0] blk_buf_b[0:WN/KN-1];
    genvar i;
    generate
-      for (i = 0; i < KN - 1; i = i + 1) begin : gen_conv_d
+      for (i = 0; i < WN/KN; i = i + 1) begin : gen_buffer
          always @(posedge vin_clk_i) begin
-            if (vin_hs) begin
-               conv_d[i] <= 0;
-            end else if (vin_de) begin
-               conv_d[i] <= conv_d[i + 1];
+            if (vin_vs) begin
+               blk_buf_a[i] <= 0;
+               blk_buf_b[i] <= 0;
+            end else if (vin_hs && ~vin_hs_r && vp_cur == KN-1) begin
+               blk_buf_a[i] <= blk_buf_b[i];
+               blk_buf_b[i] <= 0;
+            end else if (vin_de && i == hb_cur) begin
+               blk_buf_b[i] <= blk_buf_b[i] + gray;
             end
          end
       end
    endgenerate
-   always @(*) begin
-      conv_d[KN-1] <= gray;
-   end
-
-   always @(posedge vin_clk_i) begin
-      conv_dm[00] <= conv_d[00] * 3;
-      conv_dm[01] <= conv_d[01] * 5;
-      conv_dm[02] <= conv_d[02] * 7;
-      conv_dm[03] <= conv_d[03] * 9;
-      conv_dm[04] <= conv_d[04] * 11;
-      conv_dm[05] <= conv_d[05] * 14;
-      conv_dm[06] <= conv_d[06] * 16;
-      conv_dm[07] <= conv_d[07] * 17;
-      conv_dm[08] <= conv_d[08] * 18;
-      conv_dm[09] <= conv_d[09] * 19;
-      conv_dm[10] <= conv_d[10] * 19;
-      conv_dm[11] <= conv_d[11] * 19;
-      conv_dm[12] <= conv_d[12] * 18;
-      conv_dm[13] <= conv_d[13] * 17;
-      conv_dm[14] <= conv_d[14] * 16;
-      conv_dm[15] <= conv_d[15] * 14;
-      conv_dm[16] <= conv_d[16] * 11;
-      conv_dm[17] <= conv_d[17] * 9;
-      conv_dm[18] <= conv_d[18] * 7;
-      conv_dm[19] <= conv_d[19] * 5;
-      conv_dm[20] <= conv_d[20] * 3;
-   end
-
-   reg [15:0] conv_result_t;
-   always @(*) begin
-      conv_result_t = 0;
-      conv_result_t = conv_result_t + conv_dm[00];
-      conv_result_t = conv_result_t + conv_dm[01];
-      conv_result_t = conv_result_t + conv_dm[02];
-      conv_result_t = conv_result_t + conv_dm[03];
-      conv_result_t = conv_result_t + conv_dm[04];
-      conv_result_t = conv_result_t + conv_dm[05];
-      conv_result_t = conv_result_t + conv_dm[06];
-      conv_result_t = conv_result_t + conv_dm[07];
-      conv_result_t = conv_result_t + conv_dm[08];
-      conv_result_t = conv_result_t + conv_dm[09];
-      conv_result_t = conv_result_t + conv_dm[10];
-      conv_result_t = conv_result_t + conv_dm[11];
-      conv_result_t = conv_result_t + conv_dm[12];
-      conv_result_t = conv_result_t + conv_dm[13];
-      conv_result_t = conv_result_t + conv_dm[14];
-      conv_result_t = conv_result_t + conv_dm[15];
-      conv_result_t = conv_result_t + conv_dm[16];
-      conv_result_t = conv_result_t + conv_dm[17];
-      conv_result_t = conv_result_t + conv_dm[18];
-      conv_result_t = conv_result_t + conv_dm[19];
-      conv_result_t = conv_result_t + conv_dm[20];
-   end
-   wire [7:0] conv_result = conv_result_t[15:8];
-
-   // Line buffer
-   reg [7:0] line_buffer[0:1919];
-   reg [10:0] cursor;
-   always @(posedge vin_clk_i, negedge rst_n) begin
-      if (~rst_n) begin
-         cursor <= 0;
-      end else if (vin_hs) begin
-         cursor <= 0;
-      end else if (vin_de) begin
-         cursor <= cursor + 1;
-         line_buffer[cursor] <= conv_result;
-      end
-   end
 
    // Extra stages
    reg [26:0] delay[0:DELAYS-1];
@@ -177,7 +138,9 @@ module top(
    end
 
    // Output selection
-   wire vout_clk_o = vin_clk_i;
+   wire [31:0] active_blk = blk_buf_a[hb_cur];
+   wire active_light = active_blk > (KN * KN * 255 / 2);
+   assign vout_clk_o = vin_clk_i;
    reg vout_hs;
    reg vout_vs;
    reg vout_de;
@@ -187,7 +150,7 @@ module top(
          vout_hs = delay[0][26];
          vout_vs = delay[0][25];
          vout_de = delay[0][24];
-         vout_data = {24{conv_result[7]}} ^ delay[0][23:0];
+         vout_data = {24{active_light}} ^ delay[0][23:0];
       end else begin
          vout_hs = vin_hs;
          vout_vs = vin_hs;
