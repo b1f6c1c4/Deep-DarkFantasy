@@ -26,6 +26,9 @@ module top(
    output fan_no
 );
 
+   localparam KN = 21;
+   localparam DELAYS = (KN-1)/2 + 1;
+
    wire rst_n = button_ni[0];
 
    assign fan_no = 0;
@@ -68,88 +71,130 @@ module top(
       .k_o(gray)
    );
 
-   // Dark / light detection
-   reg [29:0] acc_cur;
-   reg is_light_r;
+   // Convolution
+   reg [7:0] conv_d[0:KN-1];
+   reg [13:0] conv_dm[0:KN-1];
+   genvar i;
+   generate
+      for (i = 0; i < KN - 1; i = i + 1) begin : gen_conv_d
+         always @(posedge vin_clk_i) begin
+            if (vin_hs) begin
+               conv_d[i] <= 0;
+            end else if (vin_de) begin
+               conv_d[i] <= conv_d[i + 1];
+            end
+         end
+      end
+   endgenerate
+   always @(*) begin
+      conv_d[KN-1] <= gray;
+   end
+
    always @(posedge vin_clk_i) begin
-      if (vin_vs) begin
-         is_light_r <= acc_cur >= 30'd263347200;
-         acc_cur <= 30'd0;
+      conv_dm[00] <= conv_d[00] * 3;
+      conv_dm[01] <= conv_d[01] * 5;
+      conv_dm[02] <= conv_d[02] * 7;
+      conv_dm[03] <= conv_d[03] * 9;
+      conv_dm[04] <= conv_d[04] * 11;
+      conv_dm[05] <= conv_d[05] * 14;
+      conv_dm[06] <= conv_d[06] * 16;
+      conv_dm[07] <= conv_d[07] * 17;
+      conv_dm[08] <= conv_d[08] * 18;
+      conv_dm[09] <= conv_d[09] * 19;
+      conv_dm[10] <= conv_d[10] * 19;
+      conv_dm[11] <= conv_d[11] * 19;
+      conv_dm[12] <= conv_d[12] * 18;
+      conv_dm[13] <= conv_d[13] * 17;
+      conv_dm[14] <= conv_d[14] * 16;
+      conv_dm[15] <= conv_d[15] * 14;
+      conv_dm[16] <= conv_d[16] * 11;
+      conv_dm[17] <= conv_d[17] * 9;
+      conv_dm[18] <= conv_d[18] * 7;
+      conv_dm[19] <= conv_d[19] * 5;
+      conv_dm[20] <= conv_d[20] * 3;
+   end
+
+   reg [15:0] conv_result_t;
+   always @(*) begin
+      conv_result_t = 0;
+      conv_result_t = conv_result_t + conv_dm[00];
+      conv_result_t = conv_result_t + conv_dm[01];
+      conv_result_t = conv_result_t + conv_dm[02];
+      conv_result_t = conv_result_t + conv_dm[03];
+      conv_result_t = conv_result_t + conv_dm[04];
+      conv_result_t = conv_result_t + conv_dm[05];
+      conv_result_t = conv_result_t + conv_dm[06];
+      conv_result_t = conv_result_t + conv_dm[07];
+      conv_result_t = conv_result_t + conv_dm[08];
+      conv_result_t = conv_result_t + conv_dm[09];
+      conv_result_t = conv_result_t + conv_dm[10];
+      conv_result_t = conv_result_t + conv_dm[11];
+      conv_result_t = conv_result_t + conv_dm[12];
+      conv_result_t = conv_result_t + conv_dm[13];
+      conv_result_t = conv_result_t + conv_dm[14];
+      conv_result_t = conv_result_t + conv_dm[15];
+      conv_result_t = conv_result_t + conv_dm[16];
+      conv_result_t = conv_result_t + conv_dm[17];
+      conv_result_t = conv_result_t + conv_dm[18];
+      conv_result_t = conv_result_t + conv_dm[19];
+      conv_result_t = conv_result_t + conv_dm[20];
+   end
+   wire [7:0] conv_result = conv_result_t[15:8];
+
+   // Line buffer
+   reg [7:0] line_buffer[0:1919];
+   reg [10:0] cursor;
+   always @(posedge vin_clk_i, negedge rst_n) begin
+      if (~rst_n) begin
+         cursor <= 0;
+      end else if (vin_hs) begin
+         cursor <= 0;
       end else if (vin_de) begin
-         acc_cur <= acc_cur + {1'b0,{gray}};
+         cursor <= cursor + 1;
+         line_buffer[cursor] <= conv_result;
       end
    end
 
-   // Frame buffer
-   // wire [23:0] data_r;
-   // mem i_mem (
-   //    .clk_i_p (clk_i_p),
-   //    .clk_i_n (clk_i_n),
-   //    .rst_ni (rst_ni),
-   //    .step_i (vin_de),
-   //    .data_i (vin_data),
-   // );
-
-   assign vout_clk_o = vin_clk_i;
-   wire vout_hs, vout_vs, vout_de;
-   wire [23:0] vout_data;
-   wire mid_l, mid_r;
-   wire [23:0] mid_d;
-
-   reg fancy_clock;
-   reg [31:0] counter;
-   always @(posedge clk_i2c) begin
-      if (counter == 32'd10000000) begin
-         fancy_clock = ~fancy_clock;
-         counter <= 0;
+   // Extra stages
+   reg [26:0] delay[0:DELAYS-1];
+   generate
+      for (i = 0; i < DELAYS-1; i = i + 1) begin : gen_delay
+         always @(posedge vin_clk_i, negedge rst_n) begin
+            if (~rst_n) begin
+               delay[i] <= 0;
+            end else begin
+               delay[i] <= delay[i + 1];
+            end
+         end
+      end
+   endgenerate
+   always @(posedge vin_clk_i, negedge rst_n) begin
+      if (~rst_n) begin
+         delay[DELAYS-1] <= 0;
       end else begin
-         counter <= counter + 1;
+         delay[DELAYS-1] <= {vin_hs, vin_vs, vin_de, vin_data};
       end
    end
 
-   assign led_o[2] = fancy_clock;
-   cdc_fifo #(.DW(27), .QW(5)) i_cdc_fifo_1 (
-      .wclk_i (fancy_clock),
-      .wrst_ni (rst_n),
-      .wval_i (~button_ni[2]),
-      .wdata_i ({vin_hs,vin_vs,vin_de,vin_data}),
-      .wrdy_o (led_o[0]),
-      .rclk_i (fancy_clock),
-      .rrst_ni (rst_n),
-      // .rval_o (mid_r),
-      .rval_o (led_o[1]),
-      // .rdata_o (mid_d),
-      .rdata_o ({vout_hs,vout_vs,vout_de,vout_data}),
-      // .rrdy_i (mid_l)
-      .rrdy_i (~button_ni[3])
-   );
-   // assign led_o[1] = mid_l;
-   // assign led_o[2] = mid_r;
-   // cdc_fifo #(.DW(27), .QW(7)) i_cdc_fifo_2 (
-   //    .wclk_i (vin_clk_i),
-   //    .wrst_ni (rst_n),
-   //    .wval_i (mid_r),
-   //    .wdata_i (mid_d),
-   //    .wrdy_o (mid_l),
-   //    .rclk_i (vin_clk_i),
-   //    .rrst_ni (rst_n),
-   //    .rval_o (led_o[3]),
-   //    .rdata_o ({vout_hs,vout_vs,vout_de,vout_data}),
-   //    .rrdy_i (button_ni[3])
-   // );
-
-   // always @(posedge vin_clk_i) begin
-   //    vout_hs <= vin_hs;
-   //    vout_vs <= vin_vs;
-   //    vout_de <= vin_de;
-   //    if (~button_ni[1]) begin
-   //       vout_data <= data_r ^ vin_data;
-   //    end else if (~is_light_r) begin
-   //       vout_data <= data_r;
-   //    end else begin
-   //       vout_data <= {8'hff - data_r[23:16], 8'hff - data_r[15:8], 8'hff - data_r[7:0]};
-   //    end
-   // end
+   // Output selection
+   wire vout_clk_o = vin_clk_i;
+   reg vout_hs;
+   reg vout_vs;
+   reg vout_de;
+   reg [23:0] vout_data;
+   always @(*) begin
+      if (button_ni[1]) begin
+         vout_hs = delay[0][26];
+         vout_vs = delay[0][25];
+         vout_de = delay[0][24];
+         vout_data = {24{conv_result[7]}} ^ delay[0][23:0];
+      end else begin
+         vout_hs = vin_hs;
+         vout_vs = vin_hs;
+         vout_de = vin_de;
+         vout_data = vin_data;
+      end
+   end
 
    // HDMI out
    adv7511 i_adv7511 (
