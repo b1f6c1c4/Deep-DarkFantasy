@@ -23,6 +23,23 @@ module top(
    input vin_vs_i,
    input [23:0] vin_data_i,
 
+   // DDR3
+   inout [31:0] ddr3_dq,
+   inout [3:0] ddr3_dqs_n,
+   inout [3:0] ddr3_dqs_p,
+   output [14:0] ddr3_addr,
+   output [2:0] ddr3_ba,
+   output ddr3_ras_n,
+   output ddr3_cas_n,
+   output ddr3_we_n,
+   output ddr3_reset_n,
+   output [0:0] ddr3_ck_p,
+   output [0:0] ddr3_ck_n,
+   output [0:0] ddr3_cke,
+   output [0:0] ddr3_cs_n,
+   output [3:0] ddr3_dm,
+   output [0:0] ddr3_odt,
+
    output fan_no
 );
 
@@ -30,14 +47,14 @@ module top(
 
    assign fan_no = 0;
 
-   wire clk_video; // 148.571MHz
+   wire clk_fast; // 200MHz
    wire clk_i2c; // 100MHz
    wire pll_locked;
    sys_pll i_sys_pll (
       .clk_in1_p (clk_i_p),
       .clk_in1_n (clk_i_n),
       .reset (~rst_n),
-      .clk_out1 (clk_video),
+      .clk_out1 (clk_fast),
       .clk_out2 (clk_i2c),
       .locked (pll_locked)
    );
@@ -81,75 +98,70 @@ module top(
    end
 
    // Frame buffer
-   // wire [23:0] data_r;
-   // mem i_mem (
-   //    .clk_i_p (clk_i_p),
-   //    .clk_i_n (clk_i_n),
-   //    .rst_ni (rst_ni),
-   //    .step_i (vin_de),
-   //    .data_i (vin_data),
-   // );
+   wire mem_clk, mem_rst_n;
+   wire vin_mem_val, vin_mem_rdy;
+   wire [26:0] vin_mem_data;
+   cdc_fifo #(.DW(27), .QW(10)) i_cdc_fifo_1 (
+      .wclk_i (vin_clk_i),
+      .wrst_ni (rst_n),
+      .wval_i (1'b0),
+      .wdata_i ({vin_hs,vin_vs,vin_de,vin_data}),
+      .wrdy_o (led_o[0]),
+      .rclk_i (mem_clk),
+      .rrst_ni (mem_rst_n),
+      .rval_o (vin_mem_val),
+      .rdata_o (vin_mem_data),
+      .rrdy_i (vin_mem_rdy)
+   );
+
+   assign led_o[1] = vin_mem_val;
+   assign led_o[2] = vin_mem_rdy;
+   wire vout_mem_val, vout_mem_rdy;
+   wire [26:0] vout_mem_data;
+   mem i_mem (
+      .clk_i_p,
+      .clk_i_n,
+      .rst_ni (rst_n),
+      .clk_o (mem_clk),
+      .rst_no (mem_rst_n),
+      .vin_val_i (vin_mem_val),
+      .vin_data_i (vin_mem_data),
+      .vin_rdy_o (vin_mem_rdy),
+      .vout_val_o (vout_mem_val),
+      .vout_data_o (vout_mem_data),
+      .vout_rdy_i (vout_mem_rdy),
+      .ddr3_dq,
+      .ddr3_dqs_n,
+      .ddr3_dqs_p,
+      .ddr3_addr,
+      .ddr3_ba,
+      .ddr3_ras_n,
+      .ddr3_cas_n,
+      .ddr3_we_n,
+      .ddr3_reset_n,
+      .ddr3_ck_p,
+      .ddr3_ck_n,
+      .ddr3_cke,
+      .ddr3_cs_n,
+      .ddr3_dm,
+      .ddr3_odt
+   );
 
    assign vout_clk_o = vin_clk_i;
    wire vout_hs, vout_vs, vout_de;
    wire [23:0] vout_data;
-   wire mid_l, mid_r;
-   wire [23:0] mid_d;
-
-   reg fancy_clock;
-   reg [31:0] counter;
-   always @(posedge clk_i2c) begin
-      if (counter == 32'd10000000) begin
-         fancy_clock = ~fancy_clock;
-         counter <= 0;
-      end else begin
-         counter <= counter + 1;
-      end
-   end
-
-   assign led_o[2] = fancy_clock;
-   cdc_fifo #(.DW(27), .QW(5)) i_cdc_fifo_1 (
-      .wclk_i (fancy_clock),
-      .wrst_ni (rst_n),
-      .wval_i (~button_ni[2]),
-      .wdata_i ({vin_hs,vin_vs,vin_de,vin_data}),
-      .wrdy_o (led_o[0]),
-      .rclk_i (fancy_clock),
+   cdc_fifo #(.DW(27), .QW(10)) i_cdc_fifo_2 (
+      .wclk_i (mem_clk),
+      .wrst_ni (mem_rst_n),
+      .wval_i (vout_mem_val),
+      .wdata_i (vout_mem_data),
+      .wrdy_o (vout_mem_rdy),
+      .rclk_i (vin_clk_i),
       .rrst_ni (rst_n),
-      // .rval_o (mid_r),
-      .rval_o (led_o[1]),
-      // .rdata_o (mid_d),
+      .rval_o (led_o[3]),
       .rdata_o ({vout_hs,vout_vs,vout_de,vout_data}),
-      // .rrdy_i (mid_l)
-      .rrdy_i (~button_ni[3])
+      .rrdy_i (button_ni[3])
    );
-   // assign led_o[1] = mid_l;
-   // assign led_o[2] = mid_r;
-   // cdc_fifo #(.DW(27), .QW(7)) i_cdc_fifo_2 (
-   //    .wclk_i (vin_clk_i),
-   //    .wrst_ni (rst_n),
-   //    .wval_i (mid_r),
-   //    .wdata_i (mid_d),
-   //    .wrdy_o (mid_l),
-   //    .rclk_i (vin_clk_i),
-   //    .rrst_ni (rst_n),
-   //    .rval_o (led_o[3]),
-   //    .rdata_o ({vout_hs,vout_vs,vout_de,vout_data}),
-   //    .rrdy_i (button_ni[3])
-   // );
-
-   // always @(posedge vin_clk_i) begin
-   //    vout_hs <= vin_hs;
-   //    vout_vs <= vin_vs;
-   //    vout_de <= vin_de;
-   //    if (~button_ni[1]) begin
-   //       vout_data <= data_r ^ vin_data;
-   //    end else if (~is_light_r) begin
-   //       vout_data <= data_r;
-   //    end else begin
-   //       vout_data <= {8'hff - data_r[23:16], 8'hff - data_r[15:8], 8'hff - data_r[7:0]};
-   //    end
-   // end
 
    // HDMI out
    adv7511 i_adv7511 (
