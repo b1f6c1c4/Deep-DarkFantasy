@@ -1,6 +1,6 @@
-read_checkpoint post_opt.dcp
+open_checkpoint post_opt.dcp
 
-if {file exists post_route.dcp} {
+if {[file exists post_route.dcp]} {
     read_checkpoint -incremental post_route.dcp
 }
 place_design
