@@ -26,9 +26,15 @@ module top(
    output fan_no
 );
 
+   localparam ML = 192;
    localparam WN = 1920;
-   localparam KN = 10;
-   localparam DELAYS = WN*KN+1;
+   localparam MR = 88;
+   localparam WA = ML + WN + MR;
+
+   localparam KH = 20;
+   localparam KV = 10;
+
+   localparam DELAYS = WA * KV;
 
    wire rst_n = button_ni[0];
 
@@ -73,7 +79,7 @@ module top(
    );
 
    // Block buffer
-   reg vin_hs_r;
+   reg vin_hs_r, vin_de_r;
    reg [31:0] h_cur, hb_cur, vp_cur;
    always @(posedge vin_clk_i) begin
       if (vin_vs) begin
@@ -81,13 +87,16 @@ module top(
          hb_cur <= 0;
          vp_cur <= 0;
          vin_hs_r <= 0;
+         vin_de_r <= 0;
       end else begin
          vin_hs_r <= vin_hs;
-         if (vin_hs && ~vin_hs_r) begin
-            vp_cur <= (vp_cur == KN-1) ? 0 : vp_cur + 1;
-         end
-         if (vin_de) begin
-            if (h_cur == KN-1) begin
+         vin_de_r <= vin_de;
+         if (~vin_de && vin_de_r) begin
+            h_cur <= 0;
+            hb_cur <= 0;
+            vp_cur <= (vp_cur == KV-1) ? 0 : vp_cur + 1;
+         end else if (vin_de) begin
+            if (h_cur == KH-1) begin
                h_cur <= 0;
                hb_cur <= hb_cur + 1;
             end else begin
@@ -97,20 +106,17 @@ module top(
       end
    end
 
-   reg [31:0] blk_buf_a[0:WN/KN-1];
-   reg [31:0] blk_buf_b[0:WN/KN-1];
+   reg [31:0] blk_buf_a[0:WN/KH-1];
+   reg [31:0] blk_buf_b[0:WN/KH-1];
    genvar i;
    generate
-      for (i = 0; i < WN/KN; i = i + 1) begin : gen_buffer
+      for (i = 0; i < WN/KH; i = i + 1) begin : gen_buffer
          always @(posedge vin_clk_i) begin
-            if (vin_vs) begin
-               blk_buf_a[i] <= 0;
-               blk_buf_b[i] <= 0;
-            end else if (vin_hs && ~vin_hs_r && vp_cur == KN-1) begin
+            if (vin_hs && ~vin_hs_r && vp_cur == KV-1) begin
                blk_buf_a[i] <= blk_buf_b[i];
                blk_buf_b[i] <= 0;
             end else if (vin_de && i == hb_cur) begin
-               blk_buf_b[i] <= blk_buf_b[i] + gray;
+               blk_buf_b[i] <= blk_buf_b[i] + {1'b0,gray};
             end
          end
       end
@@ -119,44 +125,24 @@ module top(
    // Extra stages
    reg [26:0] delay[0:DELAYS-1];
    generate
-      for (i = 0; i < DELAYS-1; i = i + 1) begin : gen_delay
-         always @(posedge vin_clk_i, negedge rst_n) begin
-            if (~rst_n) begin
-               delay[i] <= 0;
-            end else begin
-               delay[i] <= delay[i + 1];
-            end
+      for (i = 0; i < DELAYS; i = i + 1) begin : gen_delay
+         always @(posedge vin_clk_i) begin
+            delay[i] <= (i == 0) ? {vin_hs, vin_vs, vin_de, vin_data} : delay[i - 1];
          end
       end
    endgenerate
-   always @(posedge vin_clk_i, negedge rst_n) begin
-      if (~rst_n) begin
-         delay[DELAYS-1] <= 0;
-      end else begin
-         delay[DELAYS-1] <= {vin_hs, vin_vs, vin_de, vin_data};
-      end
-   end
 
    // Output selection
    wire [31:0] active_blk = blk_buf_a[hb_cur];
-   wire active_light = active_blk > (KN * KN * 255 / 2);
-   assign vout_clk_o = vin_clk_i;
-   reg vout_hs;
-   reg vout_vs;
-   reg vout_de;
+   wire active_light = active_blk > (KH * KV * 255 / 2);
+   wire [26:0] active_delay = button_ni[1] ? delay[DELAYS-1] : delay[0];
+   reg vout_hs, vout_vs, vout_de;
    reg [23:0] vout_data;
    always @(*) begin
-      if (button_ni[1]) begin
-         vout_hs = delay[0][26];
-         vout_vs = delay[0][25];
-         vout_de = delay[0][24];
-         vout_data = {24{active_light}} ^ delay[0][23:0];
-      end else begin
-         vout_hs = vin_hs;
-         vout_vs = vin_hs;
-         vout_de = vin_de;
-         vout_data = vin_data;
-      end
+      vout_hs = active_delay[26];
+      vout_vs = active_delay[25];
+      vout_de = active_delay[24];
+      vout_data = {24{active_light}} ^ active_delay[23:0];
    end
 
    // HDMI out
@@ -166,6 +152,7 @@ module top(
       .vout_scl_io,
       .vout_sda_io
    );
+   assign vout_clk_o = vin_clk_i;
    always @(posedge vin_clk_i) begin
       vout_hs_o <= vout_hs;
       vout_vs_o <= vout_vs;
