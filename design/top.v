@@ -27,16 +27,28 @@ module top(
 );
 
    localparam ML = 192;
-   localparam WN = 1920;
+   localparam HP = 1920;
    localparam MR = 88;
-   localparam WA = ML + WN + MR;
+   localparam WA = ML + HP + MR;
 
-   localparam KH = 20;
-   localparam KV = 10;
+   localparam VP = 1080;
 
-   localparam DELAYS = WA * KV;
+   localparam KH = 30;
+   localparam KV = 30;
 
-   wire rst_n = button_ni[0];
+   localparam DELAYS = WA * KV + 2;
+
+   wire [3:0] button_hold;
+   wire [3:0] button_press;
+   wire [3:0] button_release;
+   button i_button (
+      .clk_i (vin_clk_i),
+      .button_ni (button_ni),
+      .button_hold_o (button_hold),
+      .button_press_o (button_press),
+      .button_release_o (button_release)
+   );
+   wire rst_n = ~button_hold[0];
 
    assign fan_no = 0;
 
@@ -78,71 +90,134 @@ module top(
       .k_o(gray)
    );
 
-   // Block buffer
-   reg vin_hs_r, vin_de_r;
-   reg [31:0] h_cur, hb_cur, vp_cur;
+   // Vertical cursor
+   reg vin_de_r;
+   reg [31:0] vp_cur;
    always @(posedge vin_clk_i) begin
       if (vin_vs) begin
-         h_cur <= 0;
-         hb_cur <= 0;
          vp_cur <= 0;
-         vin_hs_r <= 0;
          vin_de_r <= 0;
       end else begin
-         vin_hs_r <= vin_hs;
          vin_de_r <= vin_de;
          if (~vin_de && vin_de_r) begin
-            h_cur <= 0;
-            hb_cur <= 0;
             vp_cur <= (vp_cur == KV-1) ? 0 : vp_cur + 1;
-         end else if (vin_de) begin
-            if (h_cur == KH-1) begin
-               h_cur <= 0;
-               hb_cur <= hb_cur + 1;
-            end else begin
-               h_cur <= h_cur + 1;
-            end
          end
       end
    end
 
-   reg [31:0] blk_buf_a[0:WN/KH-1];
-   reg [31:0] blk_buf_b[0:WN/KH-1];
-   genvar i;
-   generate
-      for (i = 0; i < WN/KH; i = i + 1) begin : gen_buffer
-         always @(posedge vin_clk_i) begin
-            if (vin_hs && ~vin_hs_r && vp_cur == KV-1) begin
-               blk_buf_a[i] <= blk_buf_b[i];
-               blk_buf_b[i] <= 0;
-            end else if (vin_de && i == hb_cur) begin
-               blk_buf_b[i] <= blk_buf_b[i] + {1'b0,gray};
-            end
-         end
-      end
-   endgenerate
+   // Blk mode
+   wire blk_x;
+   blk_buffer #(
+      .HP (HP),
+      .KH (KH),
+      .MAX (KH * KV * 255)
+   ) i_blk_buffer (
+      .clk_i (vin_clk_i),
+      .freeze_i (vp_cur == KV-1),
+      .hs_i (vin_hs),
+      .de_i (vin_de),
+      .wd_i (gray),
+      .rx_o (blk_x)
+   );
+
+   // Line mode
+   wire lin_x;
+   lin_buffer #(
+      .MAX (HP * KV * 255)
+   ) i_lin_buffer (
+      .clk_i (vin_clk_i),
+      .freeze_i (vp_cur == KV-1),
+      .hs_i (vin_hs),
+      .de_i (vin_de),
+      .wd_i (gray),
+      .rx_o (lin_x)
+   );
+
+   // Frame mode
+   wire frm_x;
+   frm_buffer #(
+      .MAX (HP * HN * 255)
+   ) i_frm_buffer (
+      .clk_i (vin_clk_i),
+      .vs_i (vin_vs),
+      .de_i (vin_de),
+      .wd_i (gray),
+      .rx_o (frm_x)
+   );
 
    // Extra stages
-   reg [26:0] delay[0:DELAYS-1];
-   generate
-      for (i = 0; i < DELAYS; i = i + 1) begin : gen_delay
-         always @(posedge vin_clk_i) begin
-            delay[i] <= (i == 0) ? {vin_hs, vin_vs, vin_de, vin_data} : delay[i - 1];
-         end
+   wire [26:0] vin_delay;
+   shift_reg #(
+      .DELAYS (DELAYS),
+      .WIDTH (27)
+   ) i_shift_reg (
+      .clk_i (vin_clk_i),
+      .d_i ({vin_hs, vin_vs, vin_de, vin_data}),
+      .d_o (vin_delay)
+   );
+
+   // Output modes
+   localparam DIRECT = 3'd0;
+   localparam INV = 3'd1;
+   localparam BLK_DARK = 3'd2;
+   localparam BLK_LIGHT = 3'd3;
+   localparam LIN_DARK = 3'd4;
+   localparam LIN_LIGHT = 3'd5;
+   localparam FRM_DARK = 3'd6;
+   localparam FRM_LIGHT = 3'd7;
+   reg [2:0] oper_mode;
+   always @(posedge vin_clk_i, negedge rst_n) begin
+      if (~rst_n) begin
+         oper_mode <= BLK_DARK;
+      end else if (button_press[1]) begin
+         case (oper_mode)
+            DIRECT: oper_mode <= BLK_DARK;
+            BLK_DARK: oper_mode <= LIN_DARK;
+            LIN_DARK: oper_mode <= FRM_DARK;
+            FRM_DARK: oper_mode <= DIRECT;
+            INV: oper_mode <= BLK_LIGHT;
+            BLK_LIGHT: oper_mode <= LIN_LIGHT;
+            LIN_LIGHT: oper_mode <= FRM_LIGHT;
+            FRM_LIGHT: oper_mode <= INV;
+         endcase
+      end else if (button_press[2]) begin
+         case (oper_mode)
+            DIRECT: oper_mode <= INV;
+            INV: oper_mode <= DIRECT;
+            BLK_DARK: oper_mode <= BLK_LIGHT;
+            BLK_LIGHT: oper_mode <= BLK_DARK;
+            LIN_DARK: oper_mode <= LIN_LIGHT;
+            LIN_LIGHT: oper_mode <= LIN_DARK;
+            FRM_DARK: oper_mode <= FRM_LIGHT;
+            FRM_LIGHT: oper_mode <= FRM_DARK;
+         endcase
       end
-   endgenerate
+   end
+   wire [2:0] oper_mode_x = button_hold[3] ? oper_mode : DIRECT;
 
    // Output selection
-   wire [31:0] active_blk = blk_buf_a[hb_cur];
-   wire active_light = active_blk > (KH * KV * 255 / 2);
-   wire [26:0] active_delay = button_ni[1] ? delay[DELAYS-1] : delay[0];
+   reg px_inv;
+   always @(*) begin
+      case (oper_mode)
+         DIRECT: px_inv = 0;
+         INV: px_inv = 1;
+         BLK_DARK: px_inv = blk_x;
+         BLK_LIGHT: px_inv = ~blk_x;
+         LIN_DARK: px_inv = lin_x;
+         LIN_LIGHT: px_inv = ~lin_x;
+         FRM_DARK: px_inv = frm_x;
+         FRM_LIGHT: px_inv = ~frm_x;
+      endcase
+   end
+
+   // Output mix
    reg vout_hs, vout_vs, vout_de;
    reg [23:0] vout_data;
    always @(*) begin
       vout_hs = active_delay[26];
       vout_vs = active_delay[25];
       vout_de = active_delay[24];
-      vout_data = {24{active_light}} ^ active_delay[23:0];
+      vout_data = {24{px_inv}} ^ active_delay[23:0];
    end
 
    // HDMI out

@@ -1,20 +1,24 @@
 module rgb_to_gray (
+   input clk_i,
    input [7:0] r_i,
    input [7:0] g_i,
    input [7:0] b_i,
    output reg [7:0] k_o
 );
 
-   reg [21:0] Y;
+   reg [21:0] Y, Y_r;
    always @(*) begin
       Y = 0;
       Y = Y + 2126 * {1'b0,r_i};
       Y = Y + 7152 * {1'b0,g_i};
       Y = Y + 0722 * {1'b0,b_i};
    end
+   always @(posedge clk_i) begin
+      Y_r <= Y;
+   end
 
-   always @(*) begin
-      case (Y[21:12])
+   always @(posedge clk_i) begin
+      case (Y_r[21:12])
          10'd0: k_o = 8'd0;
          10'd1: k_o = 8'd0;
          10'd2: k_o = 8'd1;
