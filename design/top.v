@@ -136,7 +136,7 @@ module top(
    // Frame mode
    wire frm_x;
    frm_buffer #(
-      .MAX (HP * HN * 255)
+      .MAX (HP * VP * 255)
    ) i_frm_buffer (
       .clk_i (vin_clk_i),
       .vs_i (vin_vs),
@@ -147,7 +147,7 @@ module top(
 
    // Extra stages
    wire [26:0] vin_delay;
-   shift_reg #(
+   shift_reg_cas #(
       .DELAYS (DELAYS),
       .WIDTH (27)
    ) i_shift_reg (
@@ -209,15 +209,27 @@ module top(
          FRM_LIGHT: px_inv = ~frm_x;
       endcase
    end
+   always @(*) begin
+      case (oper_mode_x)
+         DIRECT: led_o = 4'b0000;
+         INV: led_o = 4'b0001;
+         BLK_DARK: led_o = 4'b1000;
+         BLK_LIGHT: led_o = 4'b1001;
+         LIN_DARK: led_o = 4'b0100;
+         LIN_LIGHT: led_o = 4'b0101;
+         FRM_DARK: led_o = 4'b0010;
+         FRM_LIGHT: led_o = 4'b0011;
+      endcase
+   end
 
    // Output mix
    reg vout_hs, vout_vs, vout_de;
    reg [23:0] vout_data;
    always @(*) begin
-      vout_hs = active_delay[26];
-      vout_vs = active_delay[25];
-      vout_de = active_delay[24];
-      vout_data = {24{px_inv}} ^ active_delay[23:0];
+      vout_hs = vin_delay[26];
+      vout_vs = vin_delay[25];
+      vout_de = vin_delay[24];
+      vout_data = {24{px_inv}} ^ vin_delay[23:0];
    end
 
    // HDMI out

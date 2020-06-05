@@ -1,5 +1,5 @@
 module blk_buffer #(
-   parameter WN = 1920,
+   parameter HP = 1920,
    parameter KH = 10,
    parameter MAX = 2
 ) (
@@ -10,7 +10,7 @@ module blk_buffer #(
    input [7:0] wd_i,
    output rx_o
 );
-   localparam BLKS = WN / KH;
+   localparam BLKS = HP / KH;
    localparam DEPTH = $clog2(MAX) + 1;
 
    reg hs_r, de_r;

@@ -1,6 +1,6 @@
 module shift_reg #(
-   parameter integer DELAYS = 2,
-   parameter integer WIDTH = 1
+   parameter DELAYS = 2,
+   parameter WIDTH = 1
 ) (
    input clk_i,
    input [WIDTH-1:0] d_i,
