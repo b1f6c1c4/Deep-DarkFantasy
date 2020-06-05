@@ -31,22 +31,22 @@ module blk_buffer #(
       end
    end
 
-   reg [DEPTH-1:0] blk_buf_a[0:BLKS-1];
-   reg [DEPTH-1:0] blk_buf_b[0:BLKS-1];
+   wire [DEPTH-1:0] buf_a[0:BLKS-1];
    genvar i;
    generate
       for (i = 0; i < BLKS; i = i + 1) begin : g
-         always @(posedge clk_i) begin
-            if (freeze_i && hs_i && ~hs_r) begin
-               blk_buf_a[i] <= blk_buf_b[i];
-               blk_buf_b[i] <= 0;
-            end else if (de_i && i == hb_cur) begin
-               blk_buf_b[i] <= blk_buf_b[i] + {1'b0,wd_i};
-            end
-         end
+         double_buffer #(
+            .DEPTH (DEPTH)
+         ) i_double_buffer (
+            .clk_i,
+            .freeze_i (freeze_i && hs_i && ~hs_r),
+            .de_i (de_i && i == hb_cur),
+            .wd_i,
+            .buf_a (buf_a[i])
+         );
       end
    endgenerate
 
-   assign rx_o = blk_buf_a[hb_cur] >= MAX / 2;
+   assign rx_o = buf_a[hb_cur] >= MAX / 2;
 
 endmodule

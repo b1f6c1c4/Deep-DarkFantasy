@@ -1,7 +1,7 @@
 module top(
    input clk_i_p,
    input clk_i_n,
-   output [3:0] led_o,
+   output reg [3:0] led_o,
    input [3:0] button_ni,
 
    // HDMI in
@@ -36,7 +36,7 @@ module top(
    localparam KH = 30;
    localparam KV = 30;
 
-   localparam DELAYS = WA * KV + 2;
+   localparam DELAYS = WA * KV + 3;
 
    wire [3:0] button_hold;
    wire [3:0] button_press;
@@ -65,7 +65,7 @@ module top(
    );
 
    // HDMI in
-   assign vin_rst_no = rst_n;
+   assign vin_rst_no = 1'b1;
    sil9013 i_sil9013 (
       .clk_i (clk_i2c),
       .rst_ni (rst_n),
@@ -84,6 +84,7 @@ module top(
    // Gray calculation
    wire [7:0] gray;
    rgb_to_gray i_rgb_to_gray (
+      .clk_i (vin_clk_i),
       .r_i(vin_data[23:16]),
       .g_i(vin_data[15:8]),
       .b_i(vin_data[7:0]),
@@ -193,12 +194,13 @@ module top(
          endcase
       end
    end
-   wire [2:0] oper_mode_x = button_hold[3] ? oper_mode : DIRECT;
+   wire [2:0] oper_mode_x = ~button_hold[3] ? oper_mode : DIRECT;
 
    // Output selection
    reg px_inv;
    always @(*) begin
-      case (oper_mode)
+      px_inv = 0;
+      case (oper_mode_x)
          DIRECT: px_inv = 0;
          INV: px_inv = 1;
          BLK_DARK: px_inv = blk_x;
@@ -210,15 +212,16 @@ module top(
       endcase
    end
    always @(*) begin
-      case (oper_mode_x)
+      led_o = 4'b0000;
+      case (oper_mode)
          DIRECT: led_o = 4'b0000;
-         INV: led_o = 4'b0001;
-         BLK_DARK: led_o = 4'b1000;
+         INV: led_o = 4'b1000;
+         BLK_DARK: led_o = 4'b0001;
          BLK_LIGHT: led_o = 4'b1001;
-         LIN_DARK: led_o = 4'b0100;
-         LIN_LIGHT: led_o = 4'b0101;
-         FRM_DARK: led_o = 4'b0010;
-         FRM_LIGHT: led_o = 4'b0011;
+         LIN_DARK: led_o = 4'b0010;
+         LIN_LIGHT: led_o = 4'b1010;
+         FRM_DARK: led_o = 4'b0100;
+         FRM_LIGHT: led_o = 4'b1100;
       endcase
    end
 

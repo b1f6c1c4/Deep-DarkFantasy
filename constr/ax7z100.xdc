@@ -7,7 +7,7 @@ set_property CFGBVS VCCO [current_design]
 
 # System main clock: 200MHz
 
-create_clock -period 5.000 [get_ports clk_i_p]
+# create_clock -period 5.000 [get_ports clk_i_p]
 set_property PACKAGE_PIN F9 [get_ports clk_i_p]
 set_property IOSTANDARD DIFF_SSTL15 [get_ports clk_i_p]
 

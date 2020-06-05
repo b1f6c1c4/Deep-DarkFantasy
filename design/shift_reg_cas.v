@@ -6,7 +6,7 @@ module shift_reg_cas #(
    input [WIDTH-1:0] d_i,
    output [WIDTH-1:0] d_o
 );
-   localparam EACH = 4096;
+   localparam EACH = 512;
    localparam STAGES = (DELAYS + EACH - 1) / EACH;
 
    wire [WIDTH-1:0] d[0:STAGES-1];

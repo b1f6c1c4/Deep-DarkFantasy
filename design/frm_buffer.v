@@ -14,17 +14,17 @@ module frm_buffer #(
       vs_r <= vs_i;
    end
 
-   reg [DEPTH-1:0] frm_buf_a;
-   reg [DEPTH-1:0] frm_buf_b;
-   always @(posedge clk_i) begin
-      if (~vs_i && vs_r) begin
-         frm_buf_a <= frm_buf_b;
-         frm_buf_b <= 0;
-      end else if (de_i) begin
-         frm_buf_b <= frm_buf_b + {1'b0,wd_i};
-      end
-   end
+   wire [DEPTH-1:0] buf_a;
+   double_buffer #(
+      .DEPTH (DEPTH)
+   ) i_double_buffer (
+      .clk_i,
+      .freeze_i (~vs_i && vs_r),
+      .de_i,
+      .wd_i,
+      .buf_a (buf_a)
+   );
 
-   assign rx_o = frm_buf_a >= MAX / 2;
+   assign rx_o = buf_a >= MAX / 2;
 
 endmodule

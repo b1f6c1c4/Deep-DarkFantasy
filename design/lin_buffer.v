@@ -15,17 +15,17 @@ module lin_buffer #(
       hs_r <= hs_i;
    end
 
-   reg [DEPTH-1:0] lin_buf_a;
-   reg [DEPTH-1:0] lin_buf_b;
-   always @(posedge clk_i) begin
-      if (freeze_i && hs_i && ~hs_r) begin
-         lin_buf_a <= lin_buf_b;
-         lin_buf_b <= 0;
-      end else if (de_i) begin
-         lin_buf_b <= lin_buf_b + {1'b0,wd_i};
-      end
-   end
+   wire [DEPTH-1:0] buf_a;
+   double_buffer #(
+      .DEPTH (DEPTH)
+   ) i_double_buffer (
+      .clk_i,
+      .freeze_i (freeze_i && hs_i && ~hs_r),
+      .de_i,
+      .wd_i,
+      .buf_a (buf_a)
+   );
 
-   assign rx_o = lin_buf_a >= MAX / 2;
+   assign rx_o = buf_a >= MAX / 2;
 
 endmodule
