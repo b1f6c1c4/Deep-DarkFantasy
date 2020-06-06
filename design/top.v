@@ -83,6 +83,14 @@ module top #(
       vin_data <= vin_data_i;
    end
 
+   // Edge detection
+   reg vin_vs_r, vin_hs_r, vin_de_r;
+   always @(posedge vin_clk_i) begin
+      vin_vs_r <= vin_vs;
+      vin_hs_r <= vin_hs;
+      vin_de_r <= vin_de;
+   end
+
    // Gray calculation
    wire [7:0] gray;
    rgb_to_gray i_rgb_to_gray (
@@ -94,17 +102,13 @@ module top #(
    );
 
    // Vertical cursor
-   reg vin_de_r;
    reg [31:0] vp_cur;
+   wire vp_last = vp_cur == KV-1;
    always @(posedge vin_clk_i) begin
       if (vin_vs) begin
          vp_cur <= 0;
-         vin_de_r <= 0;
-      end else begin
-         vin_de_r <= vin_de;
-         if (~vin_de && vin_de_r) begin
-            vp_cur <= (vp_cur == KV-1) ? 0 : vp_cur + 1;
-         end
+      end else if (~vin_de && vin_de_r) begin
+         vp_cur <= vp_last ? 0 : vp_cur + 1;
       end
    end
 
@@ -112,13 +116,16 @@ module top #(
    wire blk_x;
    blk_buffer #(
       .HP (HP),
+      .ML (ML),
       .KH (KH),
       .MAX (KH * KV * 255)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
-      .freeze_i (vp_cur == KV-1),
+      .vp_last_i (vp_last),
       .hs_i (vin_hs),
+      .hs_r_i (vin_hs_r),
       .de_i (vin_de),
+      .de_r_i (vin_de_r),
       .wd_i (gray),
       .rx_o (blk_x)
    );
@@ -129,9 +136,9 @@ module top #(
       .MAX (HP * KV * 255)
    ) i_lin_buffer (
       .clk_i (vin_clk_i),
-      .freeze_i (vp_cur == KV-1),
-      .hs_i (vin_hs),
+      .vp_last_i (vp_last),
       .de_i (vin_de),
+      .de_r_i (vin_de_r),
       .wd_i (gray),
       .rx_o (lin_x)
    );
@@ -143,6 +150,7 @@ module top #(
    ) i_frm_buffer (
       .clk_i (vin_clk_i),
       .vs_i (vin_vs),
+      .vs_r_i (vin_vs_r),
       .de_i (vin_de),
       .wd_i (gray),
       .rx_o (frm_x)

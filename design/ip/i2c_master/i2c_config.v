@@ -64,7 +64,7 @@ wire[7:0] i2c_write_data;
 wire[7:0] i2c_read_data;
 
 wire err;
-(* MARK_DEBUG="true" *)reg[2:0] state;
+reg[2:0] state;
 
 localparam S_IDLE                =  0;
 localparam S_WR_I2C_CHECK        =  1;
