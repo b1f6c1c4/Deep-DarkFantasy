@@ -5,4 +5,4 @@ if {[file exists post_route.dcp]} {
 }
 place_design
 write_checkpoint -force post_place.dcp
-report_timing -file timing_place.rpt
+report_timing -file report/timing_place.rpt

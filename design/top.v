@@ -1,16 +1,10 @@
 module top #(
-   // You can get these numbers by
-   // xrandr --verbose # on Linux with X11
-   // TODO # on macOS
-   // TODO # on Windows
    parameter H_WIDTH  = 1920,
    parameter H_START  = 2008,
    parameter H_TOTAL  = 2200,
    parameter V_HEIGHT = 1080,
-   // Specify the size of blocks
-   // Large KV requires a HUGE number of FPGA resources
-   parameter KH = 30, // Horizontal block size
-   parameter KV = 30  // Vertical block size
+   parameter KH = 30,
+   parameter KV = 30
 ) (
    input clk_i_p,
    input clk_i_n,

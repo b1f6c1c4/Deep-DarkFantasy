@@ -1,4 +1,6 @@
-set VIN_FREQ 148.500 # MHz
+if {![info exists $VIN_FREQ]} {
+   set VIN_FREQ 148.500 # MHz
+}
 
 # General settings
 

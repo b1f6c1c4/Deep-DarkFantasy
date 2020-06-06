@@ -3,12 +3,14 @@ DESIGN=$(wildcard design/*.v)
 CONSTR=$(wildcard constr/*.xdc)
 XCI=$(wildcard ip/*.xci)
 
+include config
+
+build: build/output.bit
+
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
 
-bs: build/output.bit
-
-build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) $(XCI)
+build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) $(XCI) config
 	./script/launch.sh $<
 
 build/post_opt.dcp: script/opt.tcl build/post_synth.dcp
@@ -26,4 +28,4 @@ build/output.bit: script/bitstream.tcl build/post_route.dcp
 clean:
 	rm -rf build/
 
-.PHONY: program bs clean
+.PHONY: program build clean
