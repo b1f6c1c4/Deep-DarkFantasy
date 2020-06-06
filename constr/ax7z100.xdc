@@ -1,3 +1,5 @@
+set VIN_FREQ 148.500 # MHz
+
 # General settings
 
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
@@ -132,7 +134,9 @@ set_property PACKAGE_PIN AF20 [get_ports {vin_data_i[23]}]
 set_property IOB TRUE [get_ports {vin_data_i[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {vin_data_i[*]}]
 
-create_clock -period 6.748 -name vin_clk_i -waveform {0.000 3.374} [get_ports vin_clk_i]
+set VIN_PERIOD [expr round(1e6/$VIN_FREQ)/1000]
+set VIN_HPERIOD [expr round(5e5/$VIN_FREQ)/1000]
+create_clock -period $VIN_PERIOD -name vin_clk_i -waveform {0.000 $VIN_HPERIOD} [get_ports vin_clk_i]
 set_input_delay -clock [get_clocks vin_clk_i] -min -add_delay 1.010 [get_ports {vin_data_i[*]}]
 set_input_delay -clock [get_clocks vin_clk_i] -max -add_delay 2.500 [get_ports {vin_data_i[*]}]
 set_input_delay -clock [get_clocks vin_clk_i] -min -add_delay 1.010 [get_ports vin_de_i]

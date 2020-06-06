@@ -1,4 +1,17 @@
-module top(
+module top #(
+   // You can get these numbers by
+   // xrandr --verbose # on Linux with X11
+   // TODO # on macOS
+   // TODO # on Windows
+   parameter H_WIDTH  = 1920,
+   parameter H_START  = 2008,
+   parameter H_TOTAL  = 2200,
+   parameter V_HEIGHT = 1080,
+   // Specify the size of blocks
+   // Large KV requires a HUGE number of FPGA resources
+   parameter KH = 30, // Horizontal block size
+   parameter KV = 30  // Vertical block size
+) (
    input clk_i_p,
    input clk_i_n,
    output reg [3:0] led_o,
@@ -26,16 +39,11 @@ module top(
    output fan_no
 );
 
-   localparam ML = 192;
-   localparam HP = 1920;
-   localparam MR = 88;
+   localparam HP = H_WIDTH;
+   localparam VP = V_HEIGHT;
+   localparam ML = H_TOTAL - H_START;
+   localparam MR = H_START - H_WIDTH;
    localparam WA = ML + HP + MR;
-
-   localparam VP = 1080;
-
-   localparam KH = 30;
-   localparam KV = 30;
-
    localparam DELAYS = WA * KV + 3;
 
    wire [3:0] button_hold;

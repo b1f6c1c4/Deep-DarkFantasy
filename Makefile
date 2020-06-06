@@ -6,6 +6,8 @@ XCI=$(wildcard ip/*.xci)
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
 
+bs: build/output.bit
+
 build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) $(XCI)
 	./script/launch.sh $<
 
@@ -24,4 +26,4 @@ build/output.bit: script/bitstream.tcl build/post_route.dcp
 clean:
 	rm -rf build/
 
-.PHONY: program clean
+.PHONY: program bs clean
