@@ -1,6 +1,6 @@
 # *Deep:* Dark-Fantasy
 
-> Dark mode for **ALL apps** on **ANY platform**.
+> Global Dark mode for **ALL apps** on **ANY platforms**.
 
 ## Prerequisite
 

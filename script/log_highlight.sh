@@ -13,5 +13,4 @@ awk '
         printf "\033[33m%s\033[0m\n", $0;
       }
     }
-    /^Resolution:/ { print $0; }
 '

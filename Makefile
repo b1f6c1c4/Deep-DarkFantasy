@@ -4,6 +4,13 @@ CONSTR=$(wildcard constr/*.xdc)
 XCI=$(wildcard ip/*.xci)
 
 include config
+export H_WIDTH
+export H_START
+export H_TOTAL
+export V_HEIGHT
+export FREQ
+export KH
+export KV
 
 build: build/output.bit
 
