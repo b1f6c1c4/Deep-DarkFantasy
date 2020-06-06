@@ -8,7 +8,7 @@ module blk_buffer #(
    input hs_i,
    input de_i,
    input [7:0] wd_i,
-   output rx_o
+   output reg rx_o
 );
    localparam BLKS = HP / KH;
    localparam DEPTH = $clog2(MAX) + 1;
@@ -47,6 +47,8 @@ module blk_buffer #(
       end
    endgenerate
 
-   assign rx_o = buf_a[hb_cur] >= MAX / 2;
+   always @(posedge clk_i) begin
+      rx_o <= buf_a[hb_cur] >= MAX / 2;
+   end
 
 endmodule

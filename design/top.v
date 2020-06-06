@@ -38,7 +38,7 @@ module top #(
    localparam ML = H_TOTAL - H_START;
    localparam MR = H_START - H_WIDTH;
    localparam WA = ML + HP + MR;
-   localparam DELAYS = WA * KV + 3;
+   localparam DELAYS = WA * KV + 5;
 
    wire [3:0] button_hold;
    wire [3:0] button_press;
@@ -50,7 +50,7 @@ module top #(
       .button_press_o (button_press),
       .button_release_o (button_release)
    );
-   wire rst_n = ~button_hold[0];
+   wire rst_n = button_ni[0];
 
    assign fan_no = 0;
 

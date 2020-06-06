@@ -6,7 +6,7 @@ module lin_buffer #(
    input hs_i,
    input de_i,
    input [7:0] wd_i,
-   output rx_o
+   output reg rx_o
 );
    localparam DEPTH = $clog2(MAX) + 1;
 
@@ -26,6 +26,8 @@ module lin_buffer #(
       .buf_a (buf_a)
    );
 
-   assign rx_o = buf_a >= MAX / 2;
+   always @(posedge clk_i) begin
+      rx_o <= buf_a >= MAX / 2;
+   end
 
 endmodule

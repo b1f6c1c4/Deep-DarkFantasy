@@ -21,8 +21,13 @@ module rgb_to_gray (
    end
 
    wire [21:0] Y = Yr_r + Yg_r + Yb_r;
+   reg [21:0] Y_r;
    always @(posedge clk_i) begin
-      case (Y[21:12])
+      Y_r <= Y;
+   end
+
+   always @(posedge clk_i) begin
+      case (Y_r[21:12])
          10'd0: k_o = 8'd0;
          10'd1: k_o = 8'd0;
          10'd2: k_o = 8'd1;
