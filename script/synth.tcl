@@ -17,7 +17,7 @@ generate_target all [get_ips sys_pll]
 synth_ip [get_ips sys_pll]
 
 set VIN_FREQ $::env(FREQ)
-read_xdc [glob ../constr/*.xdc]
+read_xdc [glob ../constr/zybo-z7-20.xdc]
 synth_design -top top \
     -generic H_WIDTH=$::env(H_WIDTH) \
     -generic H_START=$::env(H_START) \
