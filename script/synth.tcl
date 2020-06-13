@@ -4,19 +4,30 @@ set_part xc7z020clg400-1
 
 read_verilog [glob ../design/*.v]
 
-# set_property ip_repo_paths ../vivado-library [current_project]
-# update_ip_catalog
+set_property ip_repo_paths ../vivado-library [current_project]
+update_ip_catalog
 
-# file mkdir ./ip/sys_pll
-# file copy -force ../ip/sys_pll.xci ./ip/sys_pll/
-# read_ip ./ip/sys_pll/sys_pll.xci
-# set locked [get_property IS_LOCKED [get_ips sys_pll]]
-# set upgrade [get_property UPGRADE_VERSIONS [get_ips sys_pll]]
-# if {$upgrade != "" && $locked} {
-#     upgrade_ip [get_ips sys_pll]
-# }
-# generate_target all [get_ips sys_pll]
-# synth_ip [get_ips sys_pll]
+file mkdir ./ip/dvi2rgb
+file copy -force ../ip/dvi2rgb.xci ./ip/dvi2rgb/
+read_ip ./ip/dvi2rgb/dvi2rgb.xci
+set locked [get_property IS_LOCKED [get_ips dvi2rgb]]
+set upgrade [get_property UPGRADE_VERSIONS [get_ips dvi2rgb]]
+if {$upgrade != "" && $locked} {
+    upgrade_ip [get_ips dvi2rgb]
+}
+generate_target all [get_ips dvi2rgb]
+synth_ip [get_ips dvi2rgb]
+
+file mkdir ./ip/rgb2dvi
+file copy -force ../ip/rgb2dvi.xci ./ip/rgb2dvi/
+read_ip ./ip/rgb2dvi/rgb2dvi.xci
+set locked [get_property IS_LOCKED [get_ips rgb2dvi]]
+set upgrade [get_property UPGRADE_VERSIONS [get_ips rgb2dvi]]
+if {$upgrade != "" && $locked} {
+    upgrade_ip [get_ips rgb2dvi]
+}
+generate_target all [get_ips rgb2dvi]
+synth_ip [get_ips rgb2dvi]
 
 set VIN_FREQ $::env(FREQ)
 read_xdc [glob ../constr/zybo-z7-20.xdc]
