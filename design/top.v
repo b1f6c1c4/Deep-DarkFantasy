@@ -27,73 +27,132 @@ module top (
 
    assign hdmi_in_hpd_o = hdmi_out_hpd_i;
 
-   wire hdmi_in_clk;
-   wire [2:0] hdmi_in_data;
-   IBUFDS #(
-      .DIFF_TERM("FALSE"),
-      .IBUF_LOW_PWR("FALSE"),
-      .IOSTANDARD("TMDS_33")
-   ) hdmi_in_clk_ibuf (
-      .I(hdmi_in_clk_p),
-      .IB(hdmi_in_clk_n),
-      .O(hdmi_in_clk)
+   // wire hdmi_in_clk;
+   // wire [2:0] hdmi_in_data;
+   // IBUFDS #(
+   //    .DIFF_TERM("FALSE"),
+   //    .IBUF_LOW_PWR("FALSE"),
+   //    .IOSTANDARD("TMDS_33")
+   // ) i_hdmi_in_clk_ibuf (
+   //    .I(hdmi_in_clk_p),
+   //    .IB(hdmi_in_clk_n),
+   //    .O(hdmi_in_clk)
+   // );
+   // IBUFDS #(
+   //    .DIFF_TERM("FALSE"),
+   //    .IBUF_LOW_PWR("FALSE"),
+   //    .IOSTANDARD("TMDS_33")
+   // ) i_hdmi_in_data_ibuf[2:0] (
+   //    .I(hdmi_in_data_p),
+   //    .IB(hdmi_in_data_n),
+   //    .O(hdmi_in_data)
+   // );
+
+   // wire hdmi_out_clk = hdmi_in_clk;
+   // wire [2:0] hdmi_out_data = hdmi_in_data ^ sw_i[2:0];
+   // OBUFDS #(
+   //    .IOSTANDARD("TMDS_33"),
+   //    .SLEW("FAST")
+   // ) i_hdmi_out_clk_obuf (
+   //    .I(hdmi_out_clk),
+   //    .O(hdmi_out_clk_p),
+   //    .OB(hdmi_out_clk_n)
+   // );
+   // OBUFDS #(
+   //    .IOSTANDARD("TMDS_33"),
+   //    .SLEW("FAST")
+   // ) i_hdmi_out_data_obuf[2:0] (
+   //    .I(hdmi_out_data),
+   //    .O(hdmi_out_data_p),
+   //    .OB(hdmi_out_data_n)
+   // );
+
+   // HDMI in
+
+   wire hdmi_in_ddc_scl_i, hdmi_in_ddc_scl_o, hdmi_in_ddc_scl_t;
+   wire hdmi_in_ddc_sda_i, hdmi_in_ddc_sda_o, hdmi_in_ddc_sda_t;
+   IOBUF i_hdmi_in_ddc_scl_iobuf (
+      .IO(hdmi_in_ddc_scl_io),
+      .I(hdmi_in_ddc_scl_o),
+      .O(hdmi_in_ddc_scl_i),
+      .T(hdmi_in_ddc_scl_t)
    );
-   IBUFDS #(
-      .DIFF_TERM("FALSE"),
-      .IBUF_LOW_PWR("FALSE"),
-      .IOSTANDARD("TMDS_33")
-   ) hdmi_in_data_ibuf[2:0] (
-      .I(hdmi_in_data_p),
-      .IB(hdmi_in_data_n),
-      .O(hdmi_in_data)
+   IOBUF i_hdmi_in_ddc_sda_iobuf (
+      .IO(hdmi_in_ddc_sda_io),
+      .I(hdmi_in_ddc_sda_o),
+      .O(hdmi_in_ddc_sda_i),
+      .T(hdmi_in_ddc_sda_t)
    );
 
-   wire hdmi_out_clk = hdmi_in_clk;
-   wire [2:0] hdmi_out_data = hdmi_in_data ^ sw_i[2:0];
-   OBUFDS #(
-      .IOSTANDARD("TMDS_33"),
-      .SLEW("FAST")
-   ) hdmi_out_clk_obuf (
-      .I(hdmi_out_clk),
-      .O(hdmi_out_clk_p),
-      .OB(hdmi_out_clk_n)
-   );
-   OBUFDS #(
-      .IOSTANDARD("TMDS_33"),
-      .SLEW("FAST")
-   ) hdmi_out_data_obuf[2:0] (
-      .I(hdmi_out_data),
-      .O(hdmi_out_data_p),
-      .OB(hdmi_out_data_n)
+   wire vin_clk, vin_rst, vin_sclk;
+   wire vin_hs, vin_vs, vin_de;
+   wire [23:0] vin_data;
+   dvi2rgb i_dvi2rgb (
+      .RefClk(fantasy), // 200MHz
+      .aRst_n(fantasy), // RefClk is locked <= 0
+      .PixelClk(vin_clk),
+      .SerialClk(vin_sclk),
+      .pLocked(vin_rst), // PixelClk is locked => 0
+      .pRst_n(1'b1),
+
+      .TMDS_Clk_n(hdmi_in_clk_n),
+      .TMDS_Clk_p(hdmi_in_clk_p),
+      .TMDS_Data_n(hdmi_in_data_n),
+      .TMDS_Data_p(hdmi_in_data_p),
+
+      .SCL_I(hdmi_in_ddc_scl_i),
+      .SCL_O(hdmi_in_ddc_scl_o),
+      .SCL_T(hdmi_in_ddc_scl_t),
+      .SDA_I(hdmi_in_ddc_sda_i),
+      .SDA_O(hdmi_in_ddc_sda_o),
+      .SDA_T(hdmi_in_ddc_sda_t),
+
+      .vid_pData(vin_data),
+      .vid_pHSync(vin_hs),
+      .vid_pVSync(vin_vs),
+      .vid_pVDE(vin_de)
    );
 
-   // wire hdmi_in_ddc_scl_i, hdmi_in_ddc_scl_o, hdmi_in_ddc_scl_t;
-   // wire hdmi_in_ddc_sda_i, hdmi_in_ddc_sda_o, hdmi_in_ddc_sda_t;
-   // wire hdmi_out_ddc_scl_i, hdmi_out_ddc_scl_o, hdmi_out_ddc_scl_t;
-   // wire hdmi_out_ddc_sda_i, hdmi_out_ddc_sda_o, hdmi_out_ddc_sda_t;
-   // IOBUF hdmi_in_ddc_scl_iobuf (
-   //    .IO(hdmi_in_ddc_scl_io),
-   //    .I(hdmi_in_ddc_scl_o),
-   //    .O(hdmi_in_ddc_scl_i),
-   //    .T(hdmi_in_ddc_scl_t)
-   // );
-   // IOBUF hdmi_in_ddc_sda_iobuf (
-   //    .IO(hdmi_in_ddc_sda_io),
-   //    .I(hdmi_in_ddc_sda_o),
-   //    .O(hdmi_in_ddc_sda_i),
-   //    .T(hdmi_in_ddc_sda_t)
-   // );
-   // IOBUF hdmi_out_ddc_scl_iobuf (
-   //    .IO(hdmi_out_ddc_scl_io),
-   //    .I(hdmi_out_ddc_scl_o),
-   //    .O(hdmi_out_ddc_scl_i),
-   //    .T(hdmi_out_ddc_scl_t)
-   // );
-   // IOBUF hdmi_out_ddc_sda_iobuf (
-   //    .IO(hdmi_out_ddc_sda_io),
-   //    .I(hdmi_out_ddc_sda_o),
-   //    .O(hdmi_out_ddc_sda_i),
-   //    .T(hdmi_out_ddc_sda_t)
-   // );
+   // HDMI out
+
+   wire hdmi_out_ddc_scl_i, hdmi_out_ddc_scl_o, hdmi_out_ddc_scl_t;
+   wire hdmi_out_ddc_sda_i, hdmi_out_ddc_sda_o, hdmi_out_ddc_sda_t;
+   IOBUF i_hdmi_out_ddc_scl_iobuf (
+      .IO(hdmi_out_ddc_scl_io),
+      .I(hdmi_out_ddc_scl_o),
+      .O(hdmi_out_ddc_scl_i),
+      .T(hdmi_out_ddc_scl_t)
+   );
+   IOBUF i_hdmi_out_ddc_sda_iobuf (
+      .IO(hdmi_out_ddc_sda_io),
+      .I(hdmi_out_ddc_sda_o),
+      .O(hdmi_out_ddc_sda_i),
+      .T(hdmi_out_ddc_sda_t)
+   );
+
+   wire vout_hs, vout_vs, vout_de;
+   wire [23:0] vout_data;
+   rgb2dvi i_rgb2dvi (
+      .PixelClk(vin_clk),
+      .SerialClk(vin_sclk),
+      .TMDS_Clk_n(hdmi_out_clk_n),
+      .TMDS_Clk_p(hdmi_out_clk_p),
+      .TMDS_Data_n(hdmi_out_data_n),
+      .TMDS_Data_p(hdmi_out_data_p),
+      .aRst_n(axi_dynclk_0_LOCKED_O),
+      .vid_pData(vout_data),
+      .vid_pHSync(vout_hs),
+      .vid_pVDE(vout_de),
+      .vid_pVSync(vout_vs)
+   );
+
+   // Process
+
+   assign vout_hs = vin_hs;
+   assign vout_vs = vin_vs;
+   assign vout_de = vin_de;
+   assign vout_data[23:16] = vin_data[23:16] ^ sw_i[2];
+   assign vout_data[15:8] = vin_data[15:8] ^ sw_i[1];
+   assign vout_data[7:0] = vin_data[7:0] ^ sw_i[0];
 
 endmodule
