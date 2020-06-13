@@ -25,6 +25,14 @@ module top (
    output [2:0] hdmi_out_data_p
 );
 
+   wire clk_ref, rst_ref_n; // 200MHz
+   ref_pll i_ref_pll (
+      .resetn(1'b1),
+      .clk_in1(clk_i),
+      .clk_out1(clk_ref),
+      .locked(rst_ref_n)
+   );
+
    assign hdmi_in_hpd_o = hdmi_out_hpd_i;
 
    // wire hdmi_in_clk;
@@ -84,16 +92,16 @@ module top (
       .T(hdmi_in_ddc_sda_t)
    );
 
-   wire vin_clk, vin_rst, vin_sclk;
+   wire vin_clk, vin_rst_n;
    wire vin_hs, vin_vs, vin_de;
    wire [23:0] vin_data;
-   dvi2rgb i_dvi2rgb (
-      .RefClk(fantasy), // 200MHz
-      .aRst_n(fantasy), // RefClk is locked <= 0
-      .PixelClk(vin_clk),
-      .SerialClk(vin_sclk),
-      .pLocked(vin_rst), // PixelClk is locked => 0
+   dvi2rgb_1080p i_dvi2rgb (
+      .RefClk(clk_ref),
+      .aRst_n(rst_ref_n),
       .pRst_n(1'b1),
+      .PixelClk(vin_clk),
+      .aPixelClkLckd(), // DEPRECATED
+      .pLocked(vin_rst_n),
 
       .TMDS_Clk_n(hdmi_in_clk_n),
       .TMDS_Clk_p(hdmi_in_clk_p),
@@ -132,14 +140,15 @@ module top (
 
    wire vout_hs, vout_vs, vout_de;
    wire [23:0] vout_data;
-   rgb2dvi i_rgb2dvi (
+   rgb2dvi_1080p i_rgb2dvi (
       .PixelClk(vin_clk),
-      .SerialClk(vin_sclk),
+      .aRst_n(vin_rst_n),
+
       .TMDS_Clk_n(hdmi_out_clk_n),
       .TMDS_Clk_p(hdmi_out_clk_p),
       .TMDS_Data_n(hdmi_out_data_n),
       .TMDS_Data_p(hdmi_out_data_p),
-      .aRst_n(axi_dynclk_0_LOCKED_O),
+
       .vid_pData(vout_data),
       .vid_pHSync(vout_hs),
       .vid_pVDE(vout_de),

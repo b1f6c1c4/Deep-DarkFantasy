@@ -1,7 +1,10 @@
 VIVADO?=vivado
 DESIGN=$(wildcard design/*.v)
 CONSTR=$(wildcard constr/*.xdc)
-XCI=$(wildcard ip/*.xci)
+XCI=$(patsubst ip/%.xci,%,$(wildcard ip/*.xci))
+
+PART=xc7z020clg400-1
+export PART
 
 include config
 export H_WIDTH
@@ -17,8 +20,19 @@ build: build/output.bit
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
 
-build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) $(XCI) config
-	./script/launch.sh $<
+define IP_TEMPLATE
+
+build/ip/$1/$1.dcp: script/synth_ip.tcl ip/$1.xci
+	./script/launch.sh $$^
+
+build/post_synth.dcp: build/ip/$1/$1.dcp
+
+endef
+
+$(foreach x,$(XCI),$(eval $(call IP_TEMPLATE,$(x))))
+
+build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) config
+	./script/launch.sh $< $(XCI) dvi2rgb_1080p/src/ila_pixclk/ila_pixclk.xci dvi2rgb_1080p/src/ila_refclk/ila_refclk.xci
 
 build/post_opt.dcp: script/opt.tcl build/post_synth.dcp
 	./script/launch.sh $<
