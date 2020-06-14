@@ -33,47 +33,8 @@ module top (
       .locked(rst_ref_n)
    );
 
-   assign hdmi_in_hpd_o = hdmi_out_hpd_i;
-
-   // wire hdmi_in_clk;
-   // wire [2:0] hdmi_in_data;
-   // IBUFDS #(
-   //    .DIFF_TERM("FALSE"),
-   //    .IBUF_LOW_PWR("FALSE"),
-   //    .IOSTANDARD("TMDS_33")
-   // ) i_hdmi_in_clk_ibuf (
-   //    .I(hdmi_in_clk_p),
-   //    .IB(hdmi_in_clk_n),
-   //    .O(hdmi_in_clk)
-   // );
-   // IBUFDS #(
-   //    .DIFF_TERM("FALSE"),
-   //    .IBUF_LOW_PWR("FALSE"),
-   //    .IOSTANDARD("TMDS_33")
-   // ) i_hdmi_in_data_ibuf[2:0] (
-   //    .I(hdmi_in_data_p),
-   //    .IB(hdmi_in_data_n),
-   //    .O(hdmi_in_data)
-   // );
-
-   // wire hdmi_out_clk = hdmi_in_clk;
-   // wire [2:0] hdmi_out_data = hdmi_in_data ^ sw_i[2:0];
-   // OBUFDS #(
-   //    .IOSTANDARD("TMDS_33"),
-   //    .SLEW("FAST")
-   // ) i_hdmi_out_clk_obuf (
-   //    .I(hdmi_out_clk),
-   //    .O(hdmi_out_clk_p),
-   //    .OB(hdmi_out_clk_n)
-   // );
-   // OBUFDS #(
-   //    .IOSTANDARD("TMDS_33"),
-   //    .SLEW("FAST")
-   // ) i_hdmi_out_data_obuf[2:0] (
-   //    .I(hdmi_out_data),
-   //    .O(hdmi_out_data_p),
-   //    .OB(hdmi_out_data_n)
-   // );
+   assign led_o[3] = hdmi_out_hpd_i;
+   assign hdmi_in_hpd_o = 1'b1;
 
    // HDMI in
 
@@ -121,6 +82,8 @@ module top (
       .vid_pVDE(vin_de)
    );
 
+   assign led_o[0] = vin_rst_n;
+
    // HDMI out
 
    wire hdmi_out_ddc_scl_i, hdmi_out_ddc_scl_o, hdmi_out_ddc_scl_t;
@@ -160,8 +123,8 @@ module top (
    assign vout_hs = vin_hs;
    assign vout_vs = vin_vs;
    assign vout_de = vin_de;
-   assign vout_data[23:16] = vin_data[23:16] ^ sw_i[2];
-   assign vout_data[15:8] = vin_data[15:8] ^ sw_i[1];
-   assign vout_data[7:0] = vin_data[7:0] ^ sw_i[0];
+   assign vout_data[23:16] = vin_data[23:16] ^ {8{sw_i[2]}};
+   assign vout_data[15:8] = vin_data[15:8] ^ {8{sw_i[1]}};
+   assign vout_data[7:0] = vin_data[7:0] ^ {8{sw_i[0]}};
 
 endmodule

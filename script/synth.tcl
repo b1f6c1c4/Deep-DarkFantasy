@@ -1,3 +1,5 @@
+set_param general.maxThreads 32
+
 set_part $::env(PART)
 
 set_property ip_repo_paths ../vivado-library [current_project]
