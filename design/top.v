@@ -1,4 +1,11 @@
-module top (
+module top #(
+   parameter H_WIDTH  = 1920,
+   parameter H_START  = 2008,
+   parameter H_TOTAL  = 2200,
+   parameter V_HEIGHT = 1080,
+   parameter KH = 30,
+   parameter KV = 30
+) (
    input clk_i,
 
    input [3:0] sw_i,
@@ -33,7 +40,6 @@ module top (
       .locked(rst_ref_n)
    );
 
-   assign led_o[3] = hdmi_out_hpd_i;
    assign hdmi_in_hpd_o = 1'b1;
 
    // HDMI in
@@ -82,8 +88,6 @@ module top (
       .vid_pVDE(vin_de)
    );
 
-   assign led_o[0] = vin_rst_n;
-
    // HDMI out
 
    wire hdmi_out_ddc_scl_i, hdmi_out_ddc_scl_o, hdmi_out_ddc_scl_t;
@@ -101,6 +105,7 @@ module top (
       .T(hdmi_out_ddc_sda_t)
    );
 
+   wire vout_clk;
    wire vout_hs, vout_vs, vout_de;
    wire [23:0] vout_data;
    rgb2dvi_1080p i_rgb2dvi (
@@ -120,11 +125,28 @@ module top (
 
    // Process
 
-   assign vout_hs = vin_hs;
-   assign vout_vs = vin_vs;
-   assign vout_de = vin_de;
-   assign vout_data[23:16] = vin_data[23:16] ^ {8{sw_i[2]}};
-   assign vout_data[15:8] = vin_data[15:8] ^ {8{sw_i[1]}};
-   assign vout_data[7:0] = vin_data[7:0] ^ {8{sw_i[0]}};
+   fantasy #(
+      .H_WIDTH (H_WIDTH),
+      .H_START (H_START),
+      .H_TOTAL (H_TOTAL),
+      .V_HEIGHT (V_HEIGHT),
+      .KH (KH),
+      .KV (KV)
+   ) i_fantasy (
+      .button_ni (~button_i),
+      .led_o (led_o),
+
+      .vin_clk_i (vin_clk),
+      .vin_hs_i (vin_hs),
+      .vin_vs_i (vin_vs),
+      .vin_de_i (vin_de),
+      .vin_data_i (vin_data),
+
+      .vout_clk_o (vout_clk),
+      .vout_hs_o (vout_hs),
+      .vout_vs_o (vout_vs),
+      .vout_de_o (vout_de),
+      .vout_data_o (vout_data)
+   );
 
 endmodule
