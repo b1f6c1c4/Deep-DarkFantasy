@@ -1,3 +1,5 @@
+set_param general.maxThreads 32
+
 open_checkpoint post_opt.dcp
 
 if {[file exists post_route.dcp]} {
