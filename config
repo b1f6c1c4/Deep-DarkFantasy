@@ -6,5 +6,5 @@ V_HEIGHT=1080
 FREQ=148.50
 
 # Dark-Fantasy parameters
-KH=7
-KV=7
+KH=30
+KV=30
