@@ -3,8 +3,8 @@ module fantasy #(
    parameter H_START  = 2008,
    parameter H_TOTAL  = 2200,
    parameter V_HEIGHT = 1080,
-   parameter KH = 10,
-   parameter KV = 10
+   parameter KH = 30,
+   parameter KV = 30
 ) (
    input [3:0] button_ni,
    output reg [3:0] led_o,
@@ -27,7 +27,6 @@ module fantasy #(
    localparam ML = H_TOTAL - H_START;
    localparam MR = H_START - H_WIDTH;
    localparam WA = ML + HP + MR;
-   localparam DELAYS = WA * KV + 5;
 
    wire [3:0] button_hold;
    wire [3:0] button_press;
@@ -60,7 +59,7 @@ module fantasy #(
    end
 
    // Gray calculation
-   wire [7:0] gray;
+   wire [2:0] gray;
    rgb_to_gray i_rgb_to_gray (
       .clk_i (vin_clk_i),
       .r_i(vin_data[23:16]),
@@ -69,70 +68,55 @@ module fantasy #(
       .k_o(gray)
    );
 
-   // Vertical cursor
-   reg [31:0] vp_cur;
-   wire vp_last = vp_cur == KV-1;
+   // Tile cursor
+   reg [31:0] hp_cur, ht_cur;
+   reg [31:0] vp_cur, vt_cur;
+   reg [31:0] tile_cur;
    always @(posedge vin_clk_i) begin
       if (vin_vs) begin
+         hp_cur <= 0;
+         ht_cur <= 0;
          vp_cur <= 0;
-      end else if (~vin_de && vin_de_r) begin
-         vp_cur <= vp_last ? 0 : vp_cur + 1;
+         vt_cur <= 0;
+         tile_cur <= 0;
+      end else if (vin_de) begin
+         if (ht_cur == (HP + KH - 1) / KH) begin
+            // ignore
+         end else if (hp_cur == KH-1) begin
+            hp_cur <= 0;
+            ht_cur <= ht_cur + 1;
+            tile_cur <= tile_cur + 1;
+         end else begin
+            hp_cur <= hp_cur + 1;
+         end
+      end else if (~vin_hs_r && vin_hs) begin
+         hp_cur <= 0;
+         ht_cur <= 0;
+         if (vt_cur == (VP + KV - 1) / KV) begin
+            // ignore
+         end else if (vp_cur == KV-1) begin
+            vp_cur <= 0;
+            vt_cur <= vt_cur + 1;
+            tile_cur <= tile_cur + 1;
+         end else begin
+            vp_cur <= vp_cur + 1;
+         end
       end
    end
 
    // Blk mode
    wire blk_x;
    blk_buffer #(
-      .HP (HP),
-      .ML (ML),
-      .KH (KH),
-      .MAX (KH * KV * 255)
+      .BLKS (((HP + KH - 1) / KH) * ((VP + KV - 1) / KV)),
+      .MAX (KH * KV * 7)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
-      .vp_last_i (vp_last),
-      .hs_i (vin_hs),
-      .hs_r_i (vin_hs_r),
-      .de_i (vin_de),
-      .de_r_i (vin_de_r),
-      .wd_i (gray),
-      .rx_o (blk_x)
-   );
-
-   // Line mode
-   wire lin_x;
-   lin_buffer #(
-      .MAX (HP * KV * 255)
-   ) i_lin_buffer (
-      .clk_i (vin_clk_i),
-      .vp_last_i (vp_last),
-      .de_i (vin_de),
-      .de_r_i (vin_de_r),
-      .wd_i (gray),
-      .rx_o (lin_x)
-   );
-
-   // Frame mode
-   wire frm_x;
-   frm_buffer #(
-      .MAX (HP * VP * 255)
-   ) i_frm_buffer (
-      .clk_i (vin_clk_i),
+      .tile_i (tile_cur),
       .vs_i (vin_vs),
       .vs_r_i (vin_vs_r),
       .de_i (vin_de),
       .wd_i (gray),
-      .rx_o (frm_x)
-   );
-
-   // Extra stages
-   wire [26:0] vin_delay;
-   shift_reg_cas #(
-      .DELAYS (DELAYS),
-      .WIDTH (27)
-   ) i_shift_reg (
-      .clk_i (vin_clk_i),
-      .d_i ({vin_hs, vin_vs, vin_de, vin_data}),
-      .d_o (vin_delay)
+      .rx_o (blk_x)
    );
 
    // Output modes
@@ -140,10 +124,6 @@ module fantasy #(
    localparam INV = 3'd1;
    localparam BLK_DARK = 3'd2;
    localparam BLK_LIGHT = 3'd3;
-   localparam LIN_DARK = 3'd4;
-   localparam LIN_LIGHT = 3'd5;
-   localparam FRM_DARK = 3'd6;
-   localparam FRM_LIGHT = 3'd7;
    reg [2:0] oper_mode;
    always @(posedge vin_clk_i, negedge rst_n) begin
       if (~rst_n) begin
@@ -151,13 +131,9 @@ module fantasy #(
       end else if (button_press[1]) begin
          case (oper_mode)
             DIRECT: oper_mode <= BLK_DARK;
-            BLK_DARK: oper_mode <= LIN_DARK;
-            LIN_DARK: oper_mode <= FRM_DARK;
-            FRM_DARK: oper_mode <= DIRECT;
+            BLK_DARK: oper_mode <= DIRECT;
             INV: oper_mode <= BLK_LIGHT;
-            BLK_LIGHT: oper_mode <= LIN_LIGHT;
-            LIN_LIGHT: oper_mode <= FRM_LIGHT;
-            FRM_LIGHT: oper_mode <= INV;
+            BLK_LIGHT: oper_mode <= INV;
          endcase
       end else if (button_press[2]) begin
          case (oper_mode)
@@ -165,10 +141,6 @@ module fantasy #(
             INV: oper_mode <= DIRECT;
             BLK_DARK: oper_mode <= BLK_LIGHT;
             BLK_LIGHT: oper_mode <= BLK_DARK;
-            LIN_DARK: oper_mode <= LIN_LIGHT;
-            LIN_LIGHT: oper_mode <= LIN_DARK;
-            FRM_DARK: oper_mode <= FRM_LIGHT;
-            FRM_LIGHT: oper_mode <= FRM_DARK;
          endcase
       end
    end
@@ -183,10 +155,6 @@ module fantasy #(
          INV: px_inv = 1;
          BLK_DARK: px_inv = blk_x;
          BLK_LIGHT: px_inv = ~blk_x;
-         LIN_DARK: px_inv = lin_x;
-         LIN_LIGHT: px_inv = ~lin_x;
-         FRM_DARK: px_inv = frm_x;
-         FRM_LIGHT: px_inv = ~frm_x;
       endcase
    end
    always @(*) begin
@@ -196,10 +164,6 @@ module fantasy #(
          INV: led_o = 4'b1000;
          BLK_DARK: led_o = 4'b0001;
          BLK_LIGHT: led_o = 4'b1001;
-         LIN_DARK: led_o = 4'b0010;
-         LIN_LIGHT: led_o = 4'b1010;
-         FRM_DARK: led_o = 4'b0100;
-         FRM_LIGHT: led_o = 4'b1100;
       endcase
    end
 
@@ -207,10 +171,10 @@ module fantasy #(
    reg vout_hs, vout_vs, vout_de;
    reg [23:0] vout_data;
    always @(*) begin
-      vout_hs = vin_delay[26];
-      vout_vs = vin_delay[25];
-      vout_de = vin_delay[24];
-      vout_data = {24{px_inv}} ^ vin_delay[23:0];
+      vout_hs = vin_hs;
+      vout_vs = vin_vs;
+      vout_de = vin_de;
+      vout_data = {24{px_inv}} ^ vin_data;
    end
 
    // HDMI out
