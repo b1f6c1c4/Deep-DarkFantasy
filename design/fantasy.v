@@ -57,6 +57,7 @@ module fantasy #(
       vin_hs_r <= vin_hs;
       vin_de_r <= vin_de;
    end
+   wire de_fall = vin_de_r && ~vin_de;
 
    // Gray calculation
    wire [2:0] gray;
@@ -69,37 +70,51 @@ module fantasy #(
    );
 
    // Tile cursor
-   reg [31:0] hp_cur, ht_cur;
-   reg [31:0] vp_cur, vt_cur;
-   reg [31:0] tile_cur;
+   reg [31:0] hx_cur, vx_cur;
+   always @(posedge vin_clk_i) begin
+      if (vin_hs) begin
+         hx_cur <= 0;
+      end else if (vin_de) begin
+         hx_cur <= hx_cur + 1;
+      end
+   end
+   always @(posedge vin_clk_i) begin
+      if (vin_vs) begin
+         vx_cur <= 0;
+      end else if (de_fall) begin
+         vx_cur <= vx_cur + 1;
+      end
+   end
+
+   reg [31:0] hp_cur, vp_cur;
+   reg [31:0] ht_cur, vt_cur;
+   wire h_save = vin_de && (hp_cur == KH-1 || hx_cur == HP-1);
+   wire v_save = de_fall && (vp_cur == KV-1 || vx_cur == VP-1);
    always @(posedge vin_clk_i) begin
       if (vin_vs) begin
          hp_cur <= 0;
-         ht_cur <= 0;
          vp_cur <= 0;
-         vt_cur <= 0;
-         tile_cur <= 0;
-      end else if (vin_de) begin
-         if (ht_cur == (HP + KH - 1) / KH) begin
-            // ignore
-         end else if (hp_cur == KH-1) begin
-            hp_cur <= 0;
-            ht_cur <= ht_cur + 1;
-            tile_cur <= tile_cur + 1;
-         end else begin
-            hp_cur <= hp_cur + 1;
+      end else begin
+         if (vin_de) begin
+            hp_cur <= h_save ? 0 : hp_cur + 1;
          end
-      end else if (~vin_hs_r && vin_hs) begin
-         hp_cur <= 0;
+         if (de_fall) begin
+            vp_cur <= v_save ? 0 : vp_cur + 1;
+         end
+      end
+   end
+   always @(posedge vin_clk_i) begin
+      if (vin_vs) begin
          ht_cur <= 0;
-         if (vt_cur == (VP + KV - 1) / KV) begin
-            // ignore
-         end else if (vp_cur == KV-1) begin
-            vp_cur <= 0;
+         vt_cur <= 0;
+      end else begin
+         if (~vin_de) begin
+            ht_cur <= 0;
+         end else if (h_save) begin
+            ht_cur <= ht_cur + 1;
+         end
+         if (v_save) begin
             vt_cur <= vt_cur + 1;
-            tile_cur <= tile_cur + 1;
-         end else begin
-            vp_cur <= vp_cur + 1;
          end
       end
    end
@@ -107,13 +122,15 @@ module fantasy #(
    // Blk mode
    wire blk_x;
    blk_buffer #(
-      .BLKS (((HP + KH - 1) / KH) * ((VP + KV - 1) / KV)),
+      .HBLKS ((HP + KH - 1) / KH),
+      .VBLKS ((VP + KV - 1) / KV),
       .MAX (KH * KV * 7)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
-      .tile_i (tile_cur),
-      .vs_i (vin_vs),
-      .vs_r_i (vin_vs_r),
+      .ht_i (ht_cur),
+      .vt_i (vt_cur),
+      .v_save_i (v_save),
+      .h_save_i (h_save),
       .de_i (vin_de),
       .wd_i (gray),
       .rx_o (blk_x)
