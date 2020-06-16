@@ -2,7 +2,7 @@ module button #(
    parameter NUM = 4
 ) (
    input clk_i,
-   input [NUM-1:0] button_ni,
+   input [NUM-1:0] button_i,
    output reg [NUM-1:0] button_hold_o,
    output reg [NUM-1:0] button_press_o,
    output reg [NUM-1:0] button_release_o
@@ -17,8 +17,8 @@ module button #(
          always @(posedge clk_i) begin
             button_press_o[i] <= 0;
             button_release_o[i] <= 0;
-            last_n <= button_ni[i];
-            if (button_ni[i] ^ last_n) begin
+            last_n <= ~button_i[i];
+            if (button_i[i] ^ last_n) begin
                counter <= 0;
             end else if (counter < DIV) begin
                counter <= counter + 1;

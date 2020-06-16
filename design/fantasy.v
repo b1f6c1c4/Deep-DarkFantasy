@@ -6,7 +6,7 @@ module fantasy #(
    parameter KH = 30,
    parameter KV = 30
 ) (
-   input [3:0] button_ni,
+   input [3:0] button_i,
    output reg [3:0] led_o,
 
    input vin_clk_i,
@@ -37,12 +37,12 @@ module fantasy #(
    wire [3:0] button_release;
    button i_button (
       .clk_i (vout_clk_i),
-      .button_ni (button_ni),
+      .button_i (~button_i),
       .button_hold_o (button_hold),
       .button_press_o (button_press),
       .button_release_o (button_release)
    );
-   wire rst_n = button_ni[0];
+   wire rst_n = button_i[0];
 
    // Gray calculation
    wire [2:0] gray;

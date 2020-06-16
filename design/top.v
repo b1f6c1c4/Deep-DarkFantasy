@@ -114,7 +114,7 @@ module top #(
       .KH (KH),
       .KV (KV)
    ) i_fantasy (
-      .button_ni (~button_i),
+      .button_i (button_i),
       .led_o (led_o),
 
       .vin_clk_i (vin_clk),
