@@ -24,8 +24,6 @@ module top #(
    input [2:0] hdmi_in_data_p,
 
    input hdmi_out_hpd_i,
-   inout hdmi_out_ddc_scl_io,
-   inout hdmi_out_ddc_sda_io,
    output hdmi_out_clk_n,
    output hdmi_out_clk_p,
    output [2:0] hdmi_out_data_n,
@@ -40,7 +38,7 @@ module top #(
       .locked(rst_ref_n)
    );
 
-   assign hdmi_in_hpd_o = 1'b1;
+   assign hdmi_in_hpd_o = sw_i[3] || hdmi_out_hpd_i;
 
    // HDMI in
 
@@ -90,23 +88,6 @@ module top #(
 
    // HDMI out
 
-   wire hdmi_out_ddc_scl_i, hdmi_out_ddc_scl_o, hdmi_out_ddc_scl_t;
-   wire hdmi_out_ddc_sda_i, hdmi_out_ddc_sda_o, hdmi_out_ddc_sda_t;
-   IOBUF i_hdmi_out_ddc_scl_iobuf (
-      .IO(hdmi_out_ddc_scl_io),
-      .I(hdmi_out_ddc_scl_o),
-      .O(hdmi_out_ddc_scl_i),
-      .T(hdmi_out_ddc_scl_t)
-   );
-   IOBUF i_hdmi_out_ddc_sda_iobuf (
-      .IO(hdmi_out_ddc_sda_io),
-      .I(hdmi_out_ddc_sda_o),
-      .O(hdmi_out_ddc_sda_i),
-      .T(hdmi_out_ddc_sda_t)
-   );
-
-   wire vout_clk;
-   wire vout_hs, vout_vs, vout_de;
    wire [23:0] vout_data;
    rgb2dvi_1080p i_rgb2dvi (
       .PixelClk(vin_clk),
@@ -118,9 +99,9 @@ module top #(
       .TMDS_Data_p(hdmi_out_data_p),
 
       .vid_pData(vout_data),
-      .vid_pHSync(vout_hs),
-      .vid_pVDE(vout_de),
-      .vid_pVSync(vout_vs)
+      .vid_pHSync(vin_hs),
+      .vid_pVDE(vin_de),
+      .vid_pVSync(vin_vs)
    );
 
    // Process
@@ -142,10 +123,11 @@ module top #(
       .vin_de_i (vin_de),
       .vin_data_i (vin_data),
 
-      .vout_clk_o (vout_clk),
-      .vout_hs_o (vout_hs),
-      .vout_vs_o (vout_vs),
-      .vout_de_o (vout_de),
+      .vout_clk_i (vin_clk),
+      .vout_hs_i (vin_hs),
+      .vout_vs_i (vin_vs),
+      .vout_de_i (vin_de),
+      .vout_data_i (vin_data),
       .vout_data_o (vout_data)
    );
 
