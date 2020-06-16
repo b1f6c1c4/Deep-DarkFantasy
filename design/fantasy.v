@@ -15,11 +15,12 @@ module fantasy #(
    input vin_de_i,
    input [23:0] vin_data_i,
 
-   output vout_clk_o,
-   output reg vout_hs_o,
-   output reg vout_vs_o,
-   output reg vout_de_o,
-   output reg [23:0] vout_data_o
+   input vout_clk_i,
+   input vout_hs_i,
+   input vout_vs_i,
+   input vout_de_i,
+   input [23:0] vout_data_i,
+   output [23:0] vout_data_o
 );
 
    localparam HP = H_WIDTH;
@@ -28,11 +29,14 @@ module fantasy #(
    localparam MR = H_START - H_WIDTH;
    localparam WA = ML + HP + MR;
 
+   localparam HBLKS = (HP + KH - 1) / KH;
+   localparam VBLKS = (VP + KV - 1) / KV;
+
    wire [3:0] button_hold;
    wire [3:0] button_press;
    wire [3:0] button_release;
    button i_button (
-      .clk_i (vin_clk_i),
+      .clk_i (vout_clk_i),
       .button_ni (button_ni),
       .button_hold_o (button_hold),
       .button_press_o (button_press),
@@ -40,99 +44,84 @@ module fantasy #(
    );
    wire rst_n = button_ni[0];
 
-   // HDMI in
-   reg vin_hs, vin_vs, vin_de;
-   reg [23:0] vin_data;
-   always @(posedge vin_clk_i) begin
-      vin_hs <= vin_hs_i;
-      vin_vs <= vin_vs_i;
-      vin_de <= vin_de_i;
-      vin_data <= vin_data_i;
-   end
-
-   // Edge detection
-   reg vin_vs_r, vin_hs_r, vin_de_r;
-   always @(posedge vin_clk_i) begin
-      vin_vs_r <= vin_vs;
-      vin_hs_r <= vin_hs;
-      vin_de_r <= vin_de;
-   end
-   wire de_fall = vin_de_r && ~vin_de;
-
    // Gray calculation
    wire [2:0] gray;
    rgb_to_gray i_rgb_to_gray (
       .clk_i (vin_clk_i),
-      .r_i(vin_data[23:16]),
-      .g_i(vin_data[15:8]),
-      .b_i(vin_data[7:0]),
+      .r_i(vin_data_i[23:16]),
+      .g_i(vin_data_i[15:8]),
+      .b_i(vin_data_i[7:0]),
       .k_o(gray)
    );
 
-   // Tile cursor
-   reg [31:0] hx_cur, vx_cur;
-   always @(posedge vin_clk_i) begin
-      if (vin_hs) begin
-         hx_cur <= 0;
-      end else if (vin_de) begin
-         hx_cur <= hx_cur + 1;
-      end
-   end
-   always @(posedge vin_clk_i) begin
-      if (vin_vs) begin
-         vx_cur <= 0;
-      end else if (de_fall) begin
-         vx_cur <= vx_cur + 1;
-      end
-   end
+   // Cursors
+   wire de_fall, h_save, v_save;
+   wire [$clog2(HBLKS)-1:0] ht_cur;
+   wire [$clog2(VBLKS)-1:0] vt_cur;
+   cursor #(
+      .HP (HP),
+      .VP (VP),
+      .KH (KH),
+      .KV (KV),
+      .HBLKS (HBLKS),
+      .VBLKS (VBLKS)
+   ) i_cursor_in (
+      .clk_i (vin_clk_i),
+      .hs_i (vin_hs_i),
+      .vs_i (vin_vs_i),
+      .de_i (vin_de_i),
 
-   reg [31:0] hp_cur, vp_cur;
-   reg [31:0] ht_cur, vt_cur;
-   wire h_save = vin_de && (hp_cur == KH-1 || hx_cur == HP-1);
-   wire v_save = de_fall && (vp_cur == KV-1 || vx_cur == VP-1);
-   always @(posedge vin_clk_i) begin
-      if (vin_vs) begin
-         hp_cur <= 0;
-         vp_cur <= 0;
-      end else begin
-         if (vin_de) begin
-            hp_cur <= h_save ? 0 : hp_cur + 1;
-         end
-         if (de_fall) begin
-            vp_cur <= v_save ? 0 : vp_cur + 1;
-         end
-      end
-   end
-   always @(posedge vin_clk_i) begin
-      if (vin_vs) begin
-         ht_cur <= 0;
-         vt_cur <= 0;
-      end else begin
-         if (~vin_de) begin
-            ht_cur <= 0;
-         end else if (h_save) begin
-            ht_cur <= ht_cur + 1;
-         end
-         if (v_save) begin
-            vt_cur <= vt_cur + 1;
-         end
-      end
-   end
+      .de_fall_o (de_fall),
+      .h_save_o (h_save),
+      .v_save_o (v_save),
+      .ht_cur_o (ht_cur),
+      .vt_cur_o (vt_cur)
+   );
+
+   wire rde_fall, rh_save;
+   wire [$clog2(HBLKS)-1:0] rht_cur;
+   wire [$clog2(VBLKS)-1:0] rvt_cur;
+   cursor #(
+      .HP (HP),
+      .VP (VP),
+      .KH (KH),
+      .KV (KV),
+      .HBLKS (HBLKS),
+      .VBLKS (VBLKS)
+   ) i_cursor_out (
+      .clk_i (vout_clk_i),
+      .hs_i (vout_hs_i),
+      .vs_i (vout_vs_i),
+      .de_i (vout_de_i),
+
+      .de_fall_o (rde_fall),
+      .h_save_o (rh_save),
+      .v_save_o (),
+      .ht_cur_o (rht_cur),
+      .vt_cur_o (rvt_cur)
+   );
 
    // Blk mode
    wire blk_x;
    blk_buffer #(
-      .HBLKS ((HP + KH - 1) / KH),
-      .VBLKS ((VP + KV - 1) / KV),
+      .HBLKS (HBLKS),
+      .VBLKS (VBLKS),
       .MAX (KH * KV * 7)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
       .ht_i (ht_cur),
       .vt_i (vt_cur),
-      .v_save_i (v_save),
+      .vs_i (vin_vs_i),
       .h_save_i (h_save),
-      .de_i (vin_de),
+      .v_save_i (v_save),
+      .de_i (vin_de_i),
       .wd_i (gray),
+
+      .rclk_i (vout_clk_i),
+      .rht_i (rht_cur),
+      .rvt_i (rvt_cur),
+      .rvs_i (vout_vs_i),
+      .rh_save_i (rh_save),
       .rx_o (blk_x)
    );
 
@@ -142,7 +131,7 @@ module fantasy #(
    localparam BLK_DARK = 3'd2;
    localparam BLK_LIGHT = 3'd3;
    reg [2:0] oper_mode;
-   always @(posedge vin_clk_i, negedge rst_n) begin
+   always @(posedge vout_clk_i, negedge rst_n) begin
       if (~rst_n) begin
          oper_mode <= BLK_DARK;
       end else if (button_press[1]) begin
@@ -185,22 +174,6 @@ module fantasy #(
    end
 
    // Output mix
-   reg vout_hs, vout_vs, vout_de;
-   reg [23:0] vout_data;
-   always @(*) begin
-      vout_hs = vin_hs;
-      vout_vs = vin_vs;
-      vout_de = vin_de;
-      vout_data = {24{px_inv}} ^ vin_data;
-   end
-
-   // HDMI out
-   assign vout_clk_o = vin_clk_i;
-   always @(posedge vin_clk_i) begin
-      vout_hs_o <= vout_hs;
-      vout_vs_o <= vout_vs;
-      vout_de_o <= vout_de;
-      vout_data_o <= vout_data;
-   end
+   assign vout_data_o = {24{px_inv}} ^ vout_data_i;
 
 endmodule

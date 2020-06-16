@@ -88,8 +88,8 @@ set_property -dict { PACKAGE_PIN N20   IOSTANDARD TMDS_33  } [get_ports { hdmi_i
 
 #HDMI TX
 set_property -dict { PACKAGE_PIN E18   IOSTANDARD LVCMOS33 } [get_ports { hdmi_out_hpd_i }]; #IO_L5P_T0_AD9P_35 Sch=hdmi_tx_hpd
-set_property -dict { PACKAGE_PIN G17   IOSTANDARD LVCMOS33 } [get_ports { hdmi_out_ddc_scl_io }]; #IO_L16P_T2_35 Sch=hdmi_tx_scl
-set_property -dict { PACKAGE_PIN G18   IOSTANDARD LVCMOS33 } [get_ports { hdmi_out_ddc_sda_io }]; #IO_L16N_T2_35 Sch=hdmi_tx_sda
+#set_property -dict { PACKAGE_PIN G17   IOSTANDARD LVCMOS33 } [get_ports { hdmi_out_ddc_scl_io }]; #IO_L16P_T2_35 Sch=hdmi_tx_scl
+#set_property -dict { PACKAGE_PIN G18   IOSTANDARD LVCMOS33 } [get_ports { hdmi_out_ddc_sda_io }]; #IO_L16N_T2_35 Sch=hdmi_tx_sda
 set_property -dict { PACKAGE_PIN H17   IOSTANDARD TMDS_33  } [get_ports { hdmi_out_clk_n }]; #IO_L13N_T2_MRCC_35 Sch=hdmi_tx_clk_n
 set_property -dict { PACKAGE_PIN H16   IOSTANDARD TMDS_33  } [get_ports { hdmi_out_clk_p }]; #IO_L13P_T2_MRCC_35 Sch=hdmi_tx_clk_p
 set_property -dict { PACKAGE_PIN D20   IOSTANDARD TMDS_33  } [get_ports { hdmi_out_data_n[0] }]; #IO_L4N_T0_35 Sch=hdmi_tx_n[0]
