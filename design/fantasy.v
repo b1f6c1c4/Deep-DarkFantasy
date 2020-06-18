@@ -37,10 +37,10 @@ module fantasy #(
    // Gray calculation
    wire [7:0] gray;
    rgb_to_gray i_rgb_to_gray (
-      .clk_i (sw_i[3] ? vout_clk_i : vin_clk_i),
-      .r_i(sw_i[3] ? vout_data_i[23:16] : vin_data_i[23:16]),
-      .g_i(sw_i[3] ? vout_data_i[15:8] : vin_data_i[15:8]),
-      .b_i(sw_i[3] ? vout_data_i[7:0] : vin_data_i[7:0]),
+      .clk_i (vin_clk_i),
+      .r_i(vin_data_i[23:16]),
+      .g_i(vin_data_i[15:8]),
+      .b_i(vin_data_i[7:0]),
       .k_o(gray)
    );
 
@@ -56,10 +56,10 @@ module fantasy #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS)
    ) i_cursor_in (
-      .clk_i (sw_i[3] ? vout_clk_i : vin_clk_i),
-      .hs_i (sw_i[3] ? vout_hs_i : vin_hs_i),
-      .vs_i (sw_i[3] ? vout_vs_i : vin_vs_i),
-      .de_i (sw_i[3] ? vout_de_i : vin_de_i),
+      .clk_i (vin_clk_i),
+      .hs_i (vin_hs_i),
+      .vs_i (vin_vs_i),
+      .de_i (vin_de_i),
 
       .de_fall_o (de_fall),
       .h_save_o (h_save),
@@ -98,13 +98,13 @@ module fantasy #(
       .VBLKS (VBLKS),
       .MAX (KH * KV * 255)
    ) i_blk_buffer (
-      .clk_i (sw_i[3] ? vout_clk_i : vin_clk_i),
+      .clk_i (vin_clk_i),
       .ht_i (ht_cur),
       .vt_i (vt_cur),
-      .vs_i (sw_i[3] ? vout_vs_i : vin_vs_i),
+      .vs_i (vin_vs_i),
       .h_save_i (h_save),
       .v_save_i (v_save),
-      .de_i (sw_i[3] ? vout_de_i : vin_de_i),
+      .de_i (vin_de_i),
       .wd_i (gray),
 
       .rclk_i (vout_clk_i),
@@ -129,22 +129,47 @@ module fantasy #(
          px_inv = ~blk_x;
       end
    end
-   assign led_o[0] = px_inv;
-   assign led_o[3] = vout_de_i;
 
-   // Clock monitor
-   reg [31:0] vin_clk_c, vout_clk_c;
-   always @(posedge vin_clk_i) begin
-      vin_clk_c <= vin_clk_c + 1;
+   // Delay monitor
+   reg vin_fancy;
+   always @(posedge vin_clk_i, posedge sw_i[3]) begin
+      if (sw_i[3]) begin
+         vin_fancy <= 0;
+      end else if (vin_de_i && (vin_data_i == 24'h890604)) begin
+         vin_fancy <= 1;
+      end
    end
+   reg vout_fancy;
+   always @(posedge vout_clk_i, posedge sw_i[3]) begin
+      if (sw_i[3]) begin
+         vout_fancy <= 0;
+      end else if (vout_de_i && (vout_data_i == 24'h890604)) begin
+         vout_fancy <= 1;
+      end
+   end
+
+   reg vout_vs_r;
    always @(posedge vout_clk_i) begin
-      vout_clk_c <= vout_clk_c + 1;
+      vout_vs_r <= vout_vs_i;
    end
-   assign led_o[1] = vin_clk_c[26];
-   assign led_o[2] = vout_clk_c[26];
+
+   reg [31:0] cnt;
+   always @(posedge vout_clk_i, posedge sw_i[3]) begin
+      if (sw_i[3]) begin
+         cnt <= 0;
+      end else if (vout_vs_r && ~vout_vs_i) begin
+         if (~vout_fancy && vin_fancy) begin
+            if (~&cnt) begin
+               cnt <= cnt + 1;
+            end
+         end
+      end
+   end
+   assign led_o[3] = |cnt[31:3];
+   assign led_o[2:0] = cnt[2:0];
 
    // Output mix
-   assign vout_data_o = |sw_i[3:2] ? vin_data_i : ({24{px_inv}} ^ vout_data_i);
-   assign vin_hpd_o = 1'b1;
+   assign vout_data_o = {24{px_inv}} ^ vout_data_i;
+   assign vin_hpd_o = vout_hpd_i || sw_i[3] && ~sw_i[2];
 
 endmodule
