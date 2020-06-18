@@ -6,15 +6,17 @@ module fantasy #(
    parameter KH = 30,
    parameter KV = 30
 ) (
-   input [3:0] button_i,
-   output reg [3:0] led_o,
+   input [3:0] sw_i,
+   output [3:0] led_o,
 
+   output vin_hpd_o,
    input vin_clk_i,
    input vin_hs_i,
    input vin_vs_i,
    input vin_de_i,
    input [23:0] vin_data_i,
 
+   input vout_hpd_i,
    input vout_clk_i,
    input vout_hs_i,
    input vout_vs_i,
@@ -31,18 +33,6 @@ module fantasy #(
 
    localparam HBLKS = (HP + KH - 1) / KH;
    localparam VBLKS = (VP + KV - 1) / KV;
-
-   wire [3:0] button_hold;
-   wire [3:0] button_press;
-   wire [3:0] button_release;
-   button i_button (
-      .clk_i (vout_clk_i),
-      .button_i (~button_i),
-      .button_hold_o (button_hold),
-      .button_press_o (button_press),
-      .button_release_o (button_release)
-   );
-   wire rst_n = button_i[0];
 
    // Gray calculation
    wire [7:0] gray;
@@ -125,55 +115,36 @@ module fantasy #(
       .rx_o (blk_x)
    );
 
-   // Output modes
-   localparam DIRECT = 3'd0;
-   localparam INV = 3'd1;
-   localparam BLK_DARK = 3'd2;
-   localparam BLK_LIGHT = 3'd3;
-   reg [2:0] oper_mode;
-   always @(posedge vout_clk_i, negedge rst_n) begin
-      if (~rst_n) begin
-         oper_mode <= BLK_DARK;
-      end else if (button_press[1]) begin
-         case (oper_mode)
-            DIRECT: oper_mode <= BLK_DARK;
-            BLK_DARK: oper_mode <= DIRECT;
-            INV: oper_mode <= BLK_LIGHT;
-            BLK_LIGHT: oper_mode <= INV;
-         endcase
-      end else if (button_press[2]) begin
-         case (oper_mode)
-            DIRECT: oper_mode <= INV;
-            INV: oper_mode <= DIRECT;
-            BLK_DARK: oper_mode <= BLK_LIGHT;
-            BLK_LIGHT: oper_mode <= BLK_DARK;
-         endcase
-      end
-   end
-   wire [2:0] oper_mode_x = ~button_hold[3] ? oper_mode : DIRECT;
-
    // Output selection
    reg px_inv;
    always @(*) begin
       px_inv = 0;
-      case (oper_mode_x)
-         DIRECT: px_inv = 0;
-         INV: px_inv = 1;
-         BLK_DARK: px_inv = blk_x;
-         BLK_LIGHT: px_inv = ~blk_x;
-      endcase
+      if (sw_i[1:0] == 2'b00) begin
+         px_inv = blk_x;
+      end else if (sw_i[1:0] == 2'b01) begin
+         px_inv = 0;
+      end else if (sw_i[1:0] == 2'b10) begin
+         px_inv = 1;
+      end else if (sw_i[1:0] == 2'b11) begin
+         px_inv = ~blk_x;
+      end
    end
-   always @(*) begin
-      led_o = 4'b0000;
-      case (oper_mode)
-         DIRECT: led_o = 4'b0000;
-         INV: led_o = 4'b1000;
-         BLK_DARK: led_o = 4'b0001;
-         BLK_LIGHT: led_o = 4'b1001;
-      endcase
+   assign led_o[0] = px_inv;
+   assign led_o[3] = vout_hpd_i;
+
+   // Clock monitor
+   reg [31:0] vin_clk_c, vout_clk_c;
+   always @(posedge vin_clk_i) begin
+      vin_clk_c <= vin_clk_c + 1;
    end
+   always @(posedge vout_clk_i) begin
+      vout_clk_c <= vout_clk_c + 1;
+   end
+   assign led_o[1] = vin_clk_c[26];
+   assign led_o[2] = vout_clk_c[26];
 
    // Output mix
-   assign vout_data_o = {24{px_inv}} ^ vout_data_i;
+   assign vout_data_o = sw_i[2] ? vin_data_i : ({24{px_inv}} ^ vout_data_i);
+   assign vin_hpd_o = vout_hpd_i || sw_i[3];
 
 endmodule
