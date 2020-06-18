@@ -4,8 +4,8 @@ module blk_buffer #(
    parameter MAX = 2
 ) (
    input clk_i,
-   input [$clog2(HBLKS)-1:0] ht_i,
-   input [$clog2(VBLKS)-1:0] vt_i,
+   input [31:0] ht_i,
+   input [31:0] vt_i,
    input vs_i,
    input h_save_i,
    input v_save_i,
@@ -13,14 +13,13 @@ module blk_buffer #(
    input [7:0] wd_i,
 
    input rclk_i,
-   input [$clog2(HBLKS)-1:0] rht_i,
-   input [$clog2(VBLKS)-1:0] rvt_i,
+   input [31:0] rht_i,
+   input [31:0] rvt_i,
    input rvs_i,
    input rh_save_i,
    output reg rx_o
 );
-   localparam DEPTH = $clog2(MAX);
-   localparam THRES = MAX >= 4096 ? (~32'h1ff & MAX / 2) : MAX / 2;
+   localparam THRES = MAX / 2;
 
    reg [VBLKS-1:0] buf_a[0:HBLKS-1];
    reg [VBLKS-1:0] mbuf_a[0:HBLKS-1];
@@ -30,9 +29,9 @@ module blk_buffer #(
    genvar i, j;
    generate
       for (i = 0; i < HBLKS; i = i + 1) begin : g
-         reg [DEPTH-1:0] b;
+         reg [31:0] b;
          reg bt;
-         wire [DEPTH-1:0] bn = b + wd_i;
+         wire [31:0] bn = b + wd_i;
          always @(posedge clk_i) begin
             if (v_save_i) begin
                b <= 0;

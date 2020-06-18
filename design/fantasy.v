@@ -46,8 +46,8 @@ module fantasy #(
 
    // Cursors
    wire de_fall, h_save, v_save;
-   wire [$clog2(HBLKS)-1:0] ht_cur;
-   wire [$clog2(VBLKS)-1:0] vt_cur;
+   wire [31:0] ht_cur;
+   wire [31:0] vt_cur;
    cursor #(
       .HP (HP),
       .VP (VP),
@@ -69,8 +69,8 @@ module fantasy #(
    );
 
    wire rde_fall, rh_save;
-   wire [$clog2(HBLKS)-1:0] rht_cur;
-   wire [$clog2(VBLKS)-1:0] rvt_cur;
+   wire [31:0] rht_cur;
+   wire [31:0] rvt_cur;
    cursor #(
       .HP (HP),
       .VP (VP),

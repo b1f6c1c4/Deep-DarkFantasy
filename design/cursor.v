@@ -14,8 +14,8 @@ module cursor #(
    output de_fall_o,
    output h_save_o,
    output v_save_o,
-   output reg [$clog2(HBLKS)-1:0] ht_cur_o,
-   output reg [$clog2(VBLKS)-1:0] vt_cur_o
+   output reg [31:0] ht_cur_o,
+   output reg [31:0] vt_cur_o
 );
 
    // Edge detection
@@ -26,8 +26,8 @@ module cursor #(
    assign de_fall_o = de_r && ~de_i;
 
    // Tile cursor
-   reg [$clog2(HP)-1:0] hx_cur;
-   reg [$clog2(VP)-1:0] vx_cur;
+   reg [31:0] hx_cur;
+   reg [31:0] vx_cur;
    always @(posedge clk_i) begin
       if (hs_i) begin
          hx_cur <= 0;
@@ -43,8 +43,8 @@ module cursor #(
       end
    end
 
-   reg [$clog2(HP)-1:0] hp_cur;
-   reg [$clog2(VP)-1:0] vp_cur;
+   reg [31:0] hp_cur;
+   reg [31:0] vp_cur;
    assign h_save_o = de_i && (hp_cur == KH-1 || hx_cur == HP-1);
    assign v_save_o = de_fall_o && (vp_cur == KV-1 || vx_cur == VP-1);
    always @(posedge clk_i) begin
