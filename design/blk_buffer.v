@@ -10,7 +10,7 @@ module blk_buffer #(
    input h_save_i,
    input v_save_i,
    input de_i,
-   input [2:0] wd_i,
+   input [7:0] wd_i,
 
    input rclk_i,
    input [$clog2(HBLKS)-1:0] rht_i,

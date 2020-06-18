@@ -45,7 +45,7 @@ module fantasy #(
    wire rst_n = button_i[0];
 
    // Gray calculation
-   wire [2:0] gray;
+   wire [7:0] gray;
    rgb_to_gray i_rgb_to_gray (
       .clk_i (vin_clk_i),
       .r_i(vin_data_i[23:16]),
@@ -106,7 +106,7 @@ module fantasy #(
    blk_buffer #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS),
-      .MAX (KH * KV * 7)
+      .MAX (KH * KV * 255)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
       .ht_i (ht_cur),
