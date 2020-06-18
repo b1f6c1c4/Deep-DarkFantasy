@@ -37,10 +37,10 @@ module fantasy #(
    // Gray calculation
    wire [7:0] gray;
    rgb_to_gray i_rgb_to_gray (
-      .clk_i (vin_clk_i),
-      .r_i(vin_data_i[23:16]),
-      .g_i(vin_data_i[15:8]),
-      .b_i(vin_data_i[7:0]),
+      .clk_i (sw_i[3] ? vout_clk_i : vin_clk_i),
+      .r_i(sw_i[3] ? vout_data_i[23:16] : vin_data_i[23:16]),
+      .g_i(sw_i[3] ? vout_data_i[15:8] : vin_data_i[15:8]),
+      .b_i(sw_i[3] ? vout_data_i[7:0] : vin_data_i[7:0]),
       .k_o(gray)
    );
 
@@ -56,10 +56,10 @@ module fantasy #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS)
    ) i_cursor_in (
-      .clk_i (vin_clk_i),
-      .hs_i (vin_hs_i),
-      .vs_i (vin_vs_i),
-      .de_i (vin_de_i),
+      .clk_i (sw_i[3] ? vout_clk_i : vin_clk_i),
+      .hs_i (sw_i[3] ? vout_hs_i : vin_hs_i),
+      .vs_i (sw_i[3] ? vout_vs_i : vin_vs_i),
+      .de_i (sw_i[3] ? vout_de_i : vin_de_i),
 
       .de_fall_o (de_fall),
       .h_save_o (h_save),
@@ -98,13 +98,13 @@ module fantasy #(
       .VBLKS (VBLKS),
       .MAX (KH * KV * 255)
    ) i_blk_buffer (
-      .clk_i (vin_clk_i),
+      .clk_i (sw_i[3] ? vout_clk_i : vin_clk_i),
       .ht_i (ht_cur),
       .vt_i (vt_cur),
-      .vs_i (vin_vs_i),
+      .vs_i (sw_i[3] ? vout_vs_i : vin_vs_i),
       .h_save_i (h_save),
       .v_save_i (v_save),
-      .de_i (vin_de_i),
+      .de_i (sw_i[3] ? vout_de_i : vin_de_i),
       .wd_i (gray),
 
       .rclk_i (vout_clk_i),
@@ -130,7 +130,7 @@ module fantasy #(
       end
    end
    assign led_o[0] = px_inv;
-   assign led_o[3] = vout_hpd_i;
+   assign led_o[3] = vout_de_i;
 
    // Clock monitor
    reg [31:0] vin_clk_c, vout_clk_c;
@@ -144,7 +144,7 @@ module fantasy #(
    assign led_o[2] = vout_clk_c[26];
 
    // Output mix
-   assign vout_data_o = sw_i[2] ? vin_data_i : ({24{px_inv}} ^ vout_data_i);
-   assign vin_hpd_o = vout_hpd_i || sw_i[3];
+   assign vout_data_o = |sw_i[3:2] ? vin_data_i : ({24{px_inv}} ^ vout_data_i);
+   assign vin_hpd_o = 1'b1;
 
 endmodule
