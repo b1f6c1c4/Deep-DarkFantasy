@@ -3,19 +3,19 @@ module rgb_to_gray (
    input [7:0] r_i,
    input [7:0] g_i,
    input [7:0] b_i,
-   output reg [2:0] k_o
+   output reg [7:0] k_o
 );
 
-   reg [11:0] Yr_r, Yg_r, Yb_r;
+   reg [16:0] Yr, Yg, Yb;
    always @(*) begin
-      Yr_r <= 3 * {1'b0,r_i};
-      Yg_r <= 11 * {1'b0,g_i};
-      Yb_r <= 1 * {1'b0,b_i};
+      Yr = 109 * r_i;
+      Yg = 366 * g_i;
+      Yb = 37 * b_i;
    end
 
-   wire [11:0] Y = Yr_r + Yg_r + Yb_r;
+   wire [16:0] Y = Yr + Yg + Yb;
    always @(posedge clk_i) begin
-      k_o <= Y[11:9];
+      k_o <= Y[16:9];
    end
 
 endmodule
