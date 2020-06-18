@@ -9,11 +9,8 @@ module top #(
    input clk_i,
 
    input [3:0] sw_i,
-   input [3:0] button_i,
 
    output [3:0] led_o,
-   output [2:0] led5_o,
-   output [2:0] led6_o,
 
    output hdmi_in_hpd_o,
    inout hdmi_in_ddc_scl_io,
@@ -37,8 +34,6 @@ module top #(
       .clk_out1(clk_ref),
       .locked(rst_ref_n)
    );
-
-   assign hdmi_in_hpd_o = sw_i[3] || hdmi_out_hpd_i;
 
    // HDMI in
 
@@ -114,15 +109,17 @@ module top #(
       .KH (KH),
       .KV (KV)
    ) i_fantasy (
-      .button_i (button_i),
+      .sw_i (sw_i),
       .led_o (led_o),
 
+      .vin_hpd_o (hdmi_in_hpd_o),
       .vin_clk_i (vin_clk),
       .vin_hs_i (vin_hs),
       .vin_vs_i (vin_vs),
       .vin_de_i (vin_de),
       .vin_data_i (vin_data),
 
+      .vout_hpd_i (hdmi_out_hpd_i),
       .vout_clk_i (vin_clk),
       .vout_hs_i (vin_hs),
       .vout_vs_i (vin_vs),
