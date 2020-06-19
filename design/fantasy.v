@@ -10,17 +10,13 @@ module fantasy #(
    output [3:0] led_o,
 
    output vin_hpd_o,
+   input vout_hpd_i,
+
    input vin_clk_i,
    input vin_hs_i,
    input vin_vs_i,
    input vin_de_i,
    input [23:0] vin_data_i,
-
-   input vout_hpd_i,
-   input vout_clk_i,
-   input vout_hs_i,
-   input vout_vs_i,
-   input vout_de_i,
    input [23:0] vout_data_i,
    output [23:0] vout_data_o
 );
@@ -58,29 +54,6 @@ module fantasy #(
       .vt_cur_o (vt_cur)
    );
 
-   wire rde_fall, rh_save;
-   wire [$clog2(HBLKS)-1:0] rht_cur;
-   wire [$clog2(VBLKS)-1:0] rvt_cur;
-   cursor #(
-      .HP (HP),
-      .VP (VP),
-      .KH (KH),
-      .KV (KV),
-      .HBLKS (HBLKS),
-      .VBLKS (VBLKS)
-   ) i_cursor_out (
-      .clk_i (vout_clk_i),
-      .hs_i (vout_hs_i),
-      .vs_i (vout_vs_i),
-      .de_i (vout_de_i),
-
-      .de_fall_o (rde_fall),
-      .h_save_o (rh_save),
-      .v_save_o (),
-      .ht_cur_o (rht_cur),
-      .vt_cur_o (rvt_cur)
-   );
-
    // Blk mode
    wire blk_x;
    blk_buffer #(
@@ -96,12 +69,6 @@ module fantasy #(
       .v_save_i (v_save),
       .de_i (vin_de_i),
       .wd_i (vin_data_i),
-
-      .rclk_i (vout_clk_i),
-      .rht_i (rht_cur),
-      .rvt_i (rvt_cur),
-      .rvs_i (vout_vs_i),
-      .rh_save_i (rh_save),
       .rx_o (blk_x)
    );
 
@@ -127,11 +94,8 @@ module fantasy #(
    always @(posedge vin_clk_i) begin
       vin_clk_c <= vin_clk_c + 1;
    end
-   always @(posedge vout_clk_i) begin
-      vout_clk_c <= vout_clk_c + 1;
-   end
    assign led_o[1] = vin_clk_c[26];
-   assign led_o[2] = vout_clk_c[26];
+   assign led_o[2] = vin_clk_c[26];
 
    // Output mix
    assign vout_data_o = {24{px_inv}} ^ (sw_i[2] ? vin_data_i : vout_data_i);

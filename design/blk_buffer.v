@@ -12,20 +12,12 @@ module blk_buffer #(
    input de_i,
    input [23:0] wd_i,
 
-   input rclk_i,
-   input [$clog2(HBLKS)-1:0] rht_i,
-   input [$clog2(VBLKS)-1:0] rvt_i,
-   input rvs_i,
-   input rh_save_i,
-   output reg rx_o
+   output rx_o
 );
-   localparam DEPTH = $clog2(PXS * 255);
-   localparam THRES = PXS * 128;
+   localparam DEPTH = $clog2(PXS * 512 * 255);
+   localparam THRES = PXS * 256 * 255;
 
    reg [VBLKS-1:0] buf_a[0:HBLKS-1];
-   reg [VBLKS-1:0] mbuf_a[0:HBLKS-1];
-   reg [VBLKS-1:0] r1buf_a[0:HBLKS-1];
-   reg [VBLKS-1:0] r2buf_a[0:HBLKS-1];
 
    reg [$clog2(HBLKS)-1:0] ht_r, ht_rr, ht_rrr;
    reg [$clog2(VBLKS)-1:0] vt_r, vt_rr, vt_rrr;
@@ -87,29 +79,20 @@ module blk_buffer #(
          end
          for (j = 0; j < VBLKS; j = j + 1) begin : v
             always @(posedge clk_i) begin
-               if (v_save_rr && j == vt_rr) begin
-                  buf_a[i][j] <= bt[i];
-               end
-               if (vs_i) begin
-                  mbuf_a[i][j] <= buf_a[i][j];
-               end
-            end
-            always @(posedge rclk_i) begin
-               if (rvs_i) begin
-                  r1buf_a[i][j] <= mbuf_a[i][j];
-                  r2buf_a[i][j] <= r1buf_a[i][j];
+               if (v_save_rr) begin
+                  if (j == VBLKS - 1) begin
+                     buf_a[i][j] <= bt[i];
+                  end else begin
+                     buf_a[i][j] <= buf_a[i][j + 1];
+                  end
+               end else if (h_save_i) begin
+                  buf_a[i][j] <= buf_a[(i + 1) % HBLKS][j];
                end
             end
          end
       end
    endgenerate
 
-   always @(posedge rclk_i) begin
-      if (rh_save_i) begin
-         rx_o <= r2buf_a[rht_i + 1][rvt_i];
-      end else begin
-         rx_o <= r2buf_a[rht_i][rvt_i];
-      end
-   end
+   assign rx_o = buf_a[0][0];
 
 endmodule
