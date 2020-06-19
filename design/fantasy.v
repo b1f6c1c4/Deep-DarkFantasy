@@ -34,16 +34,6 @@ module fantasy #(
    localparam HBLKS = (HP + KH - 1) / KH;
    localparam VBLKS = (VP + KV - 1) / KV;
 
-   // Gray calculation
-   wire [7:0] gray;
-   rgb_to_gray i_rgb_to_gray (
-      .clk_i (vin_clk_i),
-      .r_i(vin_data_i[23:16]),
-      .g_i(vin_data_i[15:8]),
-      .b_i(vin_data_i[7:0]),
-      .k_o(gray)
-   );
-
    // Cursors
    wire de_fall, h_save, v_save;
    wire [$clog2(HBLKS)-1:0] ht_cur;
@@ -96,7 +86,7 @@ module fantasy #(
    blk_buffer #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS),
-      .MAX (KH * KV * 255)
+      .PXS (KH * KV)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
       .ht_i (ht_cur),
@@ -105,7 +95,7 @@ module fantasy #(
       .h_save_i (h_save),
       .v_save_i (v_save),
       .de_i (vin_de_i),
-      .wd_i (gray),
+      .wd_i (vin_data_i),
 
       .rclk_i (vout_clk_i),
       .rht_i (rht_cur),
@@ -144,7 +134,7 @@ module fantasy #(
    assign led_o[2] = vout_clk_c[26];
 
    // Output mix
-   assign vout_data_o = sw_i[2] ? vin_data_i : ({24{px_inv}} ^ vout_data_i);
+   assign vout_data_o = {24{px_inv}} ^ (sw_i[2] ? vin_data_i : vout_data_i);
    assign vin_hpd_o = vout_hpd_i || sw_i[3];
 
 endmodule
