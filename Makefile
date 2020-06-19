@@ -32,7 +32,7 @@ endef
 $(foreach x,$(XCI),$(eval $(call IP_TEMPLATE,$(x))))
 
 build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) config
-	./script/launch.sh $< $(XCI) dvi2rgb_1080p/src/ila_pixclk/ila_pixclk.xci dvi2rgb_1080p/src/ila_refclk/ila_refclk.xci
+	./script/launch.sh $< $(XCI)
 
 build/post_opt.dcp: script/opt.tcl build/post_synth.dcp
 	./script/launch.sh $<
