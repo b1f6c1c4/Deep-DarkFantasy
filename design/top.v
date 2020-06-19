@@ -145,10 +145,10 @@ module top #(
    wire AXI_ARVALID;
    wire AXI_AWVALID;
    wire AXI_BREADY;
-   wire AXI_RDISSUECAP1_EN;
+   wire AXI_RDISSUECAP1_EN = 0;
    wire AXI_RREADY;
    wire AXI_WLAST;
-   wire AXI_WRISSUECAP1_EN;
+   wire AXI_WRISSUECAP1_EN = 0;
    wire AXI_WVALID;
    wire [1:0] AXI_ARBURST;
    wire [1:0] AXI_ARLOCK;
@@ -190,16 +190,11 @@ module top #(
       .hdmi_out_hpd_i (hdmi_out_hpd_i),
 
       .vs_i (vin_vs),
+      .hs_i (vin_hs),
       .de_i (vin_de),
       .data_i (vin_data),
       .data_o (vout_data),
 
-      .M_AXI_RCOUNT (AXI_RCOUNT),
-      .M_AXI_WCOUNT (AXI_WCOUNT),
-      .M_AXI_RACOUNT (AXI_RACOUNT),
-      .M_AXI_WACOUNT (AXI_WACOUNT),
-      .M_AXI_RDISSUECAP (AXI_RDISSUECAP1_EN),
-      .M_AXI_WRISSUECAP (AXI_WRISSUECAP1_EN),
       .M_AXI_ARREADY (AXI_ARREADY),
       .M_AXI_AWREADY (AXI_AWREADY),
       .M_AXI_BVALID (AXI_BVALID),

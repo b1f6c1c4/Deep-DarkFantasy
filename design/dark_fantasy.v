@@ -10,11 +10,10 @@ module dark_fantasy #(
    input rst_ni,
 
    input [3:0] sw_i,
-
    output [3:0] led_o,
 
-   input hdmi_in_hpd_o,
-   output hdmi_out_hpd_i,
+   output hdmi_in_hpd_o,
+   input hdmi_out_hpd_i,
 
    input vs_i,
    input hs_i,
@@ -22,12 +21,6 @@ module dark_fantasy #(
    input [23:0] data_i,
    output [23:0] data_o,
 
-   input [7:0] M_AXI_RCOUNT,
-   input [7:0] M_AXI_WCOUNT,
-   input [2:0] M_AXI_RACOUNT,
-   input [5:0] M_AXI_WACOUNT,
-   output M_AXI_RDISSUECAP1_EN,
-   output M_AXI_WRISSUECAP1_EN,
    input M_AXI_ARREADY,
    input M_AXI_AWREADY,
    input M_AXI_BVALID,
@@ -98,9 +91,6 @@ module dark_fantasy #(
       .vout_data_o (data_o)
    );
 
-   assign axi_rdissuecap1_en = 0;
-   assign axi_wrissuecap1_en = 0;
-
    axi_delayer #(
       .H_WIDTH (H_WIDTH),
       .V_HEIGHT (V_HEIGHT)
@@ -123,18 +113,12 @@ module dark_fantasy #(
       .m_axi_bid (M_AXI_BID),
       .m_axi_rid (M_AXI_RID),
       .m_axi_rdata (M_AXI_RDATA),
-      // .m_axi_rcount (M_AXI_RCOUNT),
-      // .m_axi_wcount (M_AXI_WCOUNT),
-      // .m_axi_racount (M_AXI_RACOUNT),
-      // .m_axi_wacount (M_AXI_WACOUNT),
       .m_axi_aclk (M_AXI_ACLK),
       .m_axi_arvalid (M_AXI_ARVALID),
       .m_axi_awvalid (M_AXI_AWVALID),
       .m_axi_bready (M_AXI_BREADY),
-      // .m_axi_rdissuecap1_en (M_AXI_RDISSUECAP1_EN),
       .m_axi_rready (M_AXI_RREADY),
       .m_axi_wlast (M_AXI_WLAST),
-      // .m_axi_wrissuecap1_en (M_AXI_WRISSUECAP1_EN),
       .m_axi_wvalid (M_AXI_WVALID),
       .m_axi_arburst (M_AXI_ARBURST),
       .m_axi_arlock (M_AXI_ARLOCK),
