@@ -126,187 +126,167 @@ module top #(
 
    // Process
 
-   wire [23:0] mid_data;
+   wire AXI_ARREADY;
+   wire AXI_AWREADY;
+   wire AXI_BVALID;
+   wire AXI_RLAST;
+   wire AXI_RVALID;
+   wire AXI_WREADY;
+   wire [1:0] AXI_BRESP;
+   wire [1:0] AXI_RRESP;
+   wire [5:0] AXI_BID;
+   wire [5:0] AXI_RID;
+   wire [31:0] AXI_RDATA;
+   wire [7:0] AXI_RCOUNT;
+   wire [7:0] AXI_WCOUNT;
+   wire [2:0] AXI_RACOUNT;
+   wire [5:0] AXI_WACOUNT;
+   wire AXI_ACLK;
+   wire AXI_ARVALID;
+   wire AXI_AWVALID;
+   wire AXI_BREADY;
+   wire AXI_RDISSUECAP1_EN;
+   wire AXI_RREADY;
+   wire AXI_WLAST;
+   wire AXI_WRISSUECAP1_EN;
+   wire AXI_WVALID;
+   wire [1:0] AXI_ARBURST;
+   wire [1:0] AXI_ARLOCK;
+   wire [2:0] AXI_ARSIZE;
+   wire [1:0] AXI_AWBURST;
+   wire [1:0] AXI_AWLOCK;
+   wire [2:0] AXI_AWSIZE;
+   wire [2:0] AXI_ARPROT;
+   wire [2:0] AXI_AWPROT;
+   wire [31:0] AXI_ARADDR;
+   wire [31:0] AXI_AWADDR;
+   wire [3:0] AXI_ARCACHE;
+   wire [3:0] AXI_ARLEN;
+   wire [3:0] AXI_ARQOS;
+   wire [3:0] AXI_AWCACHE;
+   wire [3:0] AXI_AWLEN;
+   wire [3:0] AXI_AWQOS;
+   wire [5:0] AXI_ARID;
+   wire [5:0] AXI_AWID;
+   wire [5:0] AXI_WID;
+   wire [31:0] AXI_WDATA;
+   wire [3:0] AXI_WSTRB;
 
-   fantasy #(
+   dark_fantasy #(
       .H_WIDTH (H_WIDTH),
       .H_START (H_START),
       .H_TOTAL (H_TOTAL),
       .V_HEIGHT (V_HEIGHT),
       .KH (KH),
       .KV (KV)
-   ) i_fantasy (
+   ) i_dark (
+      .clk_i (vin_clk),
+      .rst_ni (rst_n),
+
       .sw_i (sw_i),
       .led_o (led_o),
 
-      .vin_hpd_o (hdmi_in_hpd_o),
-      .vin_clk_i (vin_clk),
-      .vin_hs_i (vin_hs),
-      .vin_vs_i (vin_vs),
-      .vin_de_i (vin_de),
-      .vin_data_i (vin_data),
+      .hdmi_in_hpd_o (hdmi_in_hpd_o),
+      .hdmi_out_hpd_i (hdmi_out_hpd_i),
 
-      .vout_hpd_i (hdmi_out_hpd_i),
-      .vout_clk_i (vin_clk),
-      .vout_hs_i (vin_hs),
-      .vout_vs_i (vin_vs),
-      .vout_de_i (vin_de),
-      .vout_data_i (mid_data),
-      .vout_data_o (vout_data)
-   );
-
-   // Memory
-
-   wire axi_arready;
-   wire axi_awready;
-   wire axi_bvalid;
-   wire axi_rlast;
-   wire axi_rvalid;
-   wire axi_wready;
-   wire [1:0] axi_bresp;
-   wire [1:0] axi_rresp;
-   wire [5:0] axi_bid;
-   wire [5:0] axi_rid;
-   wire [31:0] axi_rdata;
-   wire [7:0] axi_rcount;
-   wire [7:0] axi_wcount;
-   wire [2:0] axi_racount;
-   wire [5:0] axi_wacount;
-   wire axi_aclk;
-   wire axi_arvalid;
-   wire axi_awvalid;
-   wire axi_bready;
-   wire axi_rdissuecap1_en = 0;
-   wire axi_rready;
-   wire axi_wlast;
-   wire axi_wrissuecap1_en = 0;
-   wire axi_wvalid;
-   wire [1:0] axi_arburst;
-   wire [1:0] axi_arlock;
-   wire [2:0] axi_arsize;
-   wire [1:0] axi_awburst;
-   wire [1:0] axi_awlock;
-   wire [2:0] axi_awsize;
-   wire [2:0] axi_arprot;
-   wire [2:0] axi_awprot;
-   wire [31:0] axi_araddr;
-   wire [31:0] axi_awaddr;
-   wire [3:0] axi_arcache;
-   wire [3:0] axi_arlen;
-   wire [3:0] axi_arqos;
-   wire [3:0] axi_awcache;
-   wire [3:0] axi_awlen;
-   wire [3:0] axi_awqos;
-   wire [5:0] axi_arid;
-   wire [5:0] axi_awid;
-   wire [5:0] axi_wid;
-   wire [31:0] axi_wdata;
-   wire [3:0] axi_wstrb;
-
-   axi_delayer #(
-      .H_WIDTH (H_WIDTH),
-      .V_HEIGHT (V_HEIGHT)
-   ) i_axi_delayer (
-      .clk_i (vin_clk),
-      .rst_ni (rst_n),
       .vs_i (vin_vs),
       .de_i (vin_de),
       .data_i (vin_data),
-      .data_o (mid_data),
+      .data_o (vout_data),
 
-      .m_axi_arready (axi_arready),
-      .m_axi_awready (axi_awready),
-      .m_axi_bvalid (axi_bvalid),
-      .m_axi_rlast (axi_rlast),
-      .m_axi_rvalid (axi_rvalid),
-      .m_axi_wready (axi_wready),
-      .m_axi_bresp (axi_bresp),
-      .m_axi_rresp (axi_rresp),
-      .m_axi_bid (axi_bid),
-      .m_axi_rid (axi_rid),
-      .m_axi_rdata (axi_rdata),
-      // .m_axi_rcount (axi_rcount),
-      // .m_axi_wcount (axi_wcount),
-      // .m_axi_racount (axi_racount),
-      // .m_axi_wacount (axi_wacount),
-      .m_axi_aclk (axi_aclk),
-      .m_axi_arvalid (axi_arvalid),
-      .m_axi_awvalid (axi_awvalid),
-      .m_axi_bready (axi_bready),
-      // .m_axi_rdissuecap1_en (axi_rdissuecap1_en),
-      .m_axi_rready (axi_rready),
-      .m_axi_wlast (axi_wlast),
-      // .m_axi_wrissuecap1_en (axi_wrissuecap1_en),
-      .m_axi_wvalid (axi_wvalid),
-      .m_axi_arburst (axi_arburst),
-      .m_axi_arlock (axi_arlock),
-      .m_axi_arsize (axi_arsize),
-      .m_axi_awburst (axi_awburst),
-      .m_axi_awlock (axi_awlock),
-      .m_axi_awsize (axi_awsize),
-      .m_axi_arprot (axi_arprot),
-      .m_axi_awprot (axi_awprot),
-      .m_axi_araddr (axi_araddr),
-      .m_axi_awaddr (axi_awaddr),
-      .m_axi_arcache (axi_arcache),
-      .m_axi_arlen (axi_arlen),
-      .m_axi_arqos (axi_arqos),
-      .m_axi_awcache (axi_awcache),
-      .m_axi_awlen (axi_awlen),
-      .m_axi_awqos (axi_awqos),
-      .m_axi_arid (axi_arid),
-      .m_axi_awid (axi_awid),
-      .m_axi_wid (axi_wid),
-      .m_axi_wdata (axi_wdata),
-      .m_axi_wstrb (axi_wstrb)
+      .M_AXI_RCOUNT (AXI_RCOUNT),
+      .M_AXI_WCOUNT (AXI_WCOUNT),
+      .M_AXI_RACOUNT (AXI_RACOUNT),
+      .M_AXI_WACOUNT (AXI_WACOUNT),
+      .M_AXI_RDISSUECAP (AXI_RDISSUECAP1_EN),
+      .M_AXI_WRISSUECAP (AXI_WRISSUECAP1_EN),
+      .M_AXI_ARREADY (AXI_ARREADY),
+      .M_AXI_AWREADY (AXI_AWREADY),
+      .M_AXI_BVALID (AXI_BVALID),
+      .M_AXI_RLAST (AXI_RLAST),
+      .M_AXI_RVALID (AXI_RVALID),
+      .M_AXI_WREADY (AXI_WREADY),
+      .M_AXI_BRESP (AXI_BRESP),
+      .M_AXI_RRESP (AXI_RRESP),
+      .M_AXI_RDATA (AXI_RDATA),
+      .M_AXI_BID (AXI_BID),
+      .M_AXI_RID (AXI_RID),
+      .M_AXI_ACLK (AXI_ACLK),
+      .M_AXI_ARVALID (AXI_ARVALID),
+      .M_AXI_AWVALID (AXI_AWVALID),
+      .M_AXI_BREADY (AXI_BREADY),
+      .M_AXI_RREADY (AXI_RREADY),
+      .M_AXI_WLAST (AXI_WLAST),
+      .M_AXI_WVALID (AXI_WVALID),
+      .M_AXI_ARBURST (AXI_ARBURST),
+      .M_AXI_ARLOCK (AXI_ARLOCK),
+      .M_AXI_ARSIZE (AXI_ARSIZE),
+      .M_AXI_AWBURST (AXI_AWBURST),
+      .M_AXI_AWLOCK (AXI_AWLOCK),
+      .M_AXI_AWSIZE (AXI_AWSIZE),
+      .M_AXI_ARPROT (AXI_ARPROT),
+      .M_AXI_AWPROT (AXI_AWPROT),
+      .M_AXI_ARADDR (AXI_ARADDR),
+      .M_AXI_AWADDR (AXI_AWADDR),
+      .M_AXI_WDATA (AXI_WDATA),
+      .M_AXI_ARCACHE (AXI_ARCACHE),
+      .M_AXI_ARLEN (AXI_ARLEN),
+      .M_AXI_ARQOS (AXI_ARQOS),
+      .M_AXI_AWCACHE (AXI_AWCACHE),
+      .M_AXI_AWLEN (AXI_AWLEN),
+      .M_AXI_AWQOS (AXI_AWQOS),
+      .M_AXI_WSTRB (AXI_WSTRB),
+      .M_AXI_ARID (AXI_ARID),
+      .M_AXI_AWID (AXI_AWID),
+      .M_AXI_WID (AXI_WID)
    );
 
    processing_system7_0 i_ps (
-      .S_AXI_HP0_ARREADY (axi_arready),
-      .S_AXI_HP0_AWREADY (axi_awready),
-      .S_AXI_HP0_BVALID (axi_bvalid),
-      .S_AXI_HP0_RLAST (axi_rlast),
-      .S_AXI_HP0_RVALID (axi_rvalid),
-      .S_AXI_HP0_WREADY (axi_wready),
-      .S_AXI_HP0_BRESP (axi_bresp),
-      .S_AXI_HP0_RRESP (axi_rresp),
-      .S_AXI_HP0_BID (axi_bid),
-      .S_AXI_HP0_RID (axi_rid),
-      .S_AXI_HP0_RDATA (axi_rdata),
-      .S_AXI_HP0_RCOUNT (axi_rcount),
-      .S_AXI_HP0_WCOUNT (axi_wcount),
-      .S_AXI_HP0_RACOUNT (axi_racount),
-      .S_AXI_HP0_WACOUNT (axi_wacount),
-      .S_AXI_HP0_ACLK (axi_aclk),
-      .S_AXI_HP0_ARVALID (axi_arvalid),
-      .S_AXI_HP0_AWVALID (axi_awvalid),
-      .S_AXI_HP0_BREADY (axi_bready),
-      .S_AXI_HP0_RDISSUECAP1_EN (axi_rdissuecap1_en),
-      .S_AXI_HP0_RREADY (axi_rready),
-      .S_AXI_HP0_WLAST (axi_wlast),
-      .S_AXI_HP0_WRISSUECAP1_EN (axi_wrissuecap1_en),
-      .S_AXI_HP0_WVALID (axi_wvalid),
-      .S_AXI_HP0_ARBURST (axi_arburst),
-      .S_AXI_HP0_ARLOCK (axi_arlock),
-      .S_AXI_HP0_ARSIZE (axi_arsize),
-      .S_AXI_HP0_AWBURST (axi_awburst),
-      .S_AXI_HP0_AWLOCK (axi_awlock),
-      .S_AXI_HP0_AWSIZE (axi_awsize),
-      .S_AXI_HP0_ARPROT (axi_arprot),
-      .S_AXI_HP0_AWPROT (axi_awprot),
-      .S_AXI_HP0_ARADDR (axi_araddr),
-      .S_AXI_HP0_AWADDR (axi_awaddr),
-      .S_AXI_HP0_ARCACHE (axi_arcache),
-      .S_AXI_HP0_ARLEN (axi_arlen),
-      .S_AXI_HP0_ARQOS (axi_arqos),
-      .S_AXI_HP0_AWCACHE (axi_awcache),
-      .S_AXI_HP0_AWLEN (axi_awlen),
-      .S_AXI_HP0_AWQOS (axi_awqos),
-      .S_AXI_HP0_ARID (axi_arid),
-      .S_AXI_HP0_AWID (axi_awid),
-      .S_AXI_HP0_WID (axi_wid),
-      .S_AXI_HP0_WDATA (axi_wdata),
-      .S_AXI_HP0_WSTRB (axi_wstrb),
+      .S_AXI_HP0_ARREADY (AXI_ARREADY),
+      .S_AXI_HP0_AWREADY (AXI_AWREADY),
+      .S_AXI_HP0_BVALID (AXI_BVALID),
+      .S_AXI_HP0_RLAST (AXI_RLAST),
+      .S_AXI_HP0_RVALID (AXI_RVALID),
+      .S_AXI_HP0_WREADY (AXI_WREADY),
+      .S_AXI_HP0_BRESP (AXI_BRESP),
+      .S_AXI_HP0_RRESP (AXI_RRESP),
+      .S_AXI_HP0_BID (AXI_BID),
+      .S_AXI_HP0_RID (AXI_RID),
+      .S_AXI_HP0_RDATA (AXI_RDATA),
+      .S_AXI_HP0_RCOUNT (AXI_RCOUNT),
+      .S_AXI_HP0_WCOUNT (AXI_WCOUNT),
+      .S_AXI_HP0_RACOUNT (AXI_RACOUNT),
+      .S_AXI_HP0_WACOUNT (AXI_WACOUNT),
+      .S_AXI_HP0_ACLK (AXI_ACLK),
+      .S_AXI_HP0_ARVALID (AXI_ARVALID),
+      .S_AXI_HP0_AWVALID (AXI_AWVALID),
+      .S_AXI_HP0_BREADY (AXI_BREADY),
+      .S_AXI_HP0_RDISSUECAP1_EN (AXI_RDISSUECAP1_EN),
+      .S_AXI_HP0_RREADY (AXI_RREADY),
+      .S_AXI_HP0_WLAST (AXI_WLAST),
+      .S_AXI_HP0_WRISSUECAP1_EN (AXI_WRISSUECAP1_EN),
+      .S_AXI_HP0_WVALID (AXI_WVALID),
+      .S_AXI_HP0_ARBURST (AXI_ARBURST),
+      .S_AXI_HP0_ARLOCK (AXI_ARLOCK),
+      .S_AXI_HP0_ARSIZE (AXI_ARSIZE),
+      .S_AXI_HP0_AWBURST (AXI_AWBURST),
+      .S_AXI_HP0_AWLOCK (AXI_AWLOCK),
+      .S_AXI_HP0_AWSIZE (AXI_AWSIZE),
+      .S_AXI_HP0_ARPROT (AXI_ARPROT),
+      .S_AXI_HP0_AWPROT (AXI_AWPROT),
+      .S_AXI_HP0_ARADDR (AXI_ARADDR),
+      .S_AXI_HP0_AWADDR (AXI_AWADDR),
+      .S_AXI_HP0_ARCACHE (AXI_ARCACHE),
+      .S_AXI_HP0_ARLEN (AXI_ARLEN),
+      .S_AXI_HP0_ARQOS (AXI_ARQOS),
+      .S_AXI_HP0_AWCACHE (AXI_AWCACHE),
+      .S_AXI_HP0_AWLEN (AXI_AWLEN),
+      .S_AXI_HP0_AWQOS (AXI_AWQOS),
+      .S_AXI_HP0_ARID (AXI_ARID),
+      .S_AXI_HP0_AWID (AXI_AWID),
+      .S_AXI_HP0_WID (AXI_WID),
+      .S_AXI_HP0_WDATA (AXI_WDATA),
+      .S_AXI_HP0_WSTRB (AXI_WSTRB),
 
       .MIO (MIO),
       .DDR_CAS_n (DDR_CAS_n),
