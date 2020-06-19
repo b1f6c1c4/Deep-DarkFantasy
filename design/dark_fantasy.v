@@ -76,17 +76,13 @@ module dark_fantasy #(
       .led_o (led_o),
 
       .vin_hpd_o (hdmi_in_hpd_o),
+      .vout_hpd_i (hdmi_out_hpd_i),
+
       .vin_clk_i (clk_i),
       .vin_hs_i (hs_i),
       .vin_vs_i (vs_i),
       .vin_de_i (de_i),
       .vin_data_i (data_i),
-
-      .vout_hpd_i (hdmi_out_hpd_i),
-      .vout_clk_i (clk_i),
-      .vout_hs_i (hs_i),
-      .vout_vs_i (vs_i),
-      .vout_de_i (de_i),
       .vout_data_i (mid_data),
       .vout_data_o (data_o)
    );
