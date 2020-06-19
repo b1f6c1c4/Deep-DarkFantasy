@@ -28,75 +28,67 @@ module blk_buffer #(
    reg [VBLKS-1:0] r2buf_a[0:HBLKS-1];
 
    reg [$clog2(HBLKS)-1:0] ht_r, ht_rr, ht_rrr;
+   reg [$clog2(VBLKS)-1:0] vt_r, vt_rr, vt_rrr;
    reg h_save_r, h_save_rr, h_save_rrr;
+   reg v_save_r, v_save_rr, v_save_rrr;
    reg de_r, de_rr;
    reg [23:0] wd_r;
    always @(posedge clk_i) begin
       ht_r <= ht_i;
+      vt_r <= vt_i;
       h_save_r <= h_save_i;
+      v_save_r <= v_save_i;
       de_r <= de_i;
       wd_r <= wd_i;
 
       ht_rr <= ht_r;
+      vt_rr <= vt_r;
       h_save_rr <= h_save_r;
+      v_save_rr <= v_save_r;
       de_rr <= de_r;
 
       ht_rrr <= ht_rr;
+      vt_rrr <= vt_rr;
       h_save_rrr <= h_save_rr;
+      v_save_rrr <= v_save_rr;
    end
 
-   reg [DEPTH-1:0] br[0:HBLKS-1], bg[0:HBLKS-1], bb[0:HBLKS-1];
-   reg [DEPTH-1:0] br_r, bg_r, bb_r;
-   reg [DEPTH-1:0] brf_r, bgf_r, bbf_r;
-   reg [DEPTH-1:0] br_rr, bg_rr, bb_rr;
-   reg bt_rrr;
-   always @(*) begin
-      if (de_rr && !h_save_rr) begin
-         brf_r = br_rr;
-         bgf_r = bg_rr;
-         bbf_r = bb_rr;
-      end else begin
-         brf_r = br_r;
-         bgf_r = bg_r;
-         bbf_r = bb_r;
-      end
-   end
-   always @(posedge clk_i) begin
-      br_r <= br[ht_i];
-      bg_r <= bg[ht_i];
-      bb_r <= bb[ht_i];
+   reg [3*DEPTH-1:0] brgb[0:HBLKS-1];
+   reg bt[0:HBLKS-1];
 
-      br_rr <= brf_r + 109 * wd_r[23:16];
-      bg_rr <= bgf_r + 366 * wd_r[15:8];
-      bb_rr <= bbf_r + 37 * wd_r[7:0];
-
-      bt_rrr <= (br_rr + bg_rr + bb_rr) >= THRES;
-   end
+   wire [3*DEPTH-1:0] b0n;
+   assign b0n[3*DEPTH-1:2*DEPTH] = brgb[0][3*DEPTH-1:2*DEPTH] + 109 * wd_i[23:16];
+   assign b0n[2*DEPTH-1:1*DEPTH] = brgb[0][2*DEPTH-1:1*DEPTH] + 366 * wd_i[15:8];
+   assign b0n[1*DEPTH-1:0*DEPTH] = brgb[0][1*DEPTH-1:0*DEPTH] + 37 * wd_i[7:0];
+   wire [DEPTH-1:0] bzr = brgb[HBLKS-1][3*DEPTH-1:2*DEPTH];
+   wire [DEPTH-1:0] bzg = brgb[HBLKS-1][2*DEPTH-1:1*DEPTH];
+   wire [DEPTH-1:0] bzb = brgb[HBLKS-1][1*DEPTH-1:0*DEPTH];
 
    genvar i, j;
    generate
       for (i = 0; i < HBLKS; i = i + 1) begin : g
-         reg bt;
          always @(posedge clk_i) begin
             if (v_save_i) begin
-               br[i] <= 0;
-               bg[i] <= 0;
-               bb[i] <= 0;
-            end else begin
-               if (i == ht_rr && de_rr) begin
-                  br[i] <= br_rr;
-                  bg[i] <= bg_rr;
-                  bb[i] <= bb_rr;
-               end
-               if (i == ht_rrr && h_save_rrr) begin
-                  bt <= bt_rrr;
+               brgb[i] <= 0;
+            end else if (h_save_i) begin
+               brgb[i] <= (i == HBLKS - 1) ? b0n : brgb[i + 1];
+            end else if (i == 0 && de_i) begin
+               brgb[i] <= b0n;
+            end
+         end
+         always @(posedge clk_i) begin
+            if (h_save_r) begin
+               if (i == HBLKS - 1) begin
+                  bt[i] <= (bzr + bzg + bzg) >= THRES;
+               end else begin
+                  bt[i] <= bt[i + 1];
                end
             end
          end
          for (j = 0; j < VBLKS; j = j + 1) begin : v
             always @(posedge clk_i) begin
-               if (v_save_i && j == vt_i) begin
-                  buf_a[i][j] <= bt;
+               if (v_save_rr && j == vt_rr) begin
+                  buf_a[i][j] <= bt[i];
                end
                if (vs_i) begin
                   mbuf_a[i][j] <= buf_a[i][j];
