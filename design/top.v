@@ -170,7 +170,7 @@ module top #(
    wire [5:0] AXI_AWID;
    wire [5:0] AXI_WID;
    wire [63:0] AXI_WDATA;
-   wire [3:0] AXI_WSTRB;
+   wire [7:0] AXI_WSTRB;
 
    dark_fantasy #(
       .H_WIDTH (H_WIDTH),

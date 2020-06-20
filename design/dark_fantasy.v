@@ -56,7 +56,7 @@ module dark_fantasy #(
    output [3:0] M_AXI_AWCACHE,
    output [3:0] M_AXI_AWLEN,
    output [3:0] M_AXI_AWQOS,
-   output [3:0] M_AXI_WSTRB,
+   output [7:0] M_AXI_WSTRB,
    output [5:0] M_AXI_ARID,
    output [5:0] M_AXI_AWID,
    output [5:0] M_AXI_WID

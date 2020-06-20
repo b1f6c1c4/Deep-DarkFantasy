@@ -4,9 +4,6 @@ module blk_buffer #(
    parameter PXS = 30 * 30
 ) (
    input clk_i,
-   input [$clog2(HBLKS)-1:0] ht_i,
-   input [$clog2(VBLKS)-1:0] vt_i,
-   input vs_i,
    input h_save_i,
    input v_save_i,
    input de_i,
@@ -19,30 +16,13 @@ module blk_buffer #(
 
    reg [VBLKS-1:0] buf_a[0:HBLKS-1];
 
-   reg [$clog2(HBLKS)-1:0] ht_r, ht_rr, ht_rrr;
-   reg [$clog2(VBLKS)-1:0] vt_r, vt_rr, vt_rrr;
-   reg h_save_r, h_save_rr, h_save_rrr;
-   reg v_save_r, v_save_rr, v_save_rrr;
-   reg de_r, de_rr;
-   reg [23:0] wd_r;
+   reg h_save_r;
+   reg v_save_r, v_save_rr;
    always @(posedge clk_i) begin
-      ht_r <= ht_i;
-      vt_r <= vt_i;
       h_save_r <= h_save_i;
       v_save_r <= v_save_i;
-      de_r <= de_i;
-      wd_r <= wd_i;
 
-      ht_rr <= ht_r;
-      vt_rr <= vt_r;
-      h_save_rr <= h_save_r;
       v_save_rr <= v_save_r;
-      de_rr <= de_r;
-
-      ht_rrr <= ht_rr;
-      vt_rrr <= vt_rr;
-      h_save_rrr <= h_save_rr;
-      v_save_rrr <= v_save_rr;
    end
 
    reg [3*DEPTH-1:0] brgb[0:HBLKS-1];

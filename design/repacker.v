@@ -6,14 +6,21 @@ module repacker #(
    input clk_i,
    input rst_ni,
 
-   input de_i,
-   input [IN-1:0] d_i,
-   output de_o,
-   output [OUT-1:0] d_o
+   input in_val_i,
+   input [IN-1:0] in_data_i,
+   output in_rdy_o,
+
+   output out_val_o,
+   output [OUT-1:0] out_data_o,
+   input out_rdy_i
 );
 
+   wire push = in_val_i && in_rdy_o;
+   wire pop = out_val_o && out_rdy_i;
+
    reg [$clog2(BUFF)-1:0] v;
-   assign de_o = de_i ? v >= OUT : |v;
+   assign out_val_o = push ? v >= OUT - 1 : v >= OUT;
+   assign in_rdy_o = v + IN <= BUFF;
 
    reg [BUFF-1:0] mem;
    reg [IN+BUFF-1:0] mx;
@@ -22,8 +29,8 @@ module repacker #(
    always @(*) begin
       mx = {{IN{1'b0}},mem};
       vx = v;
-      if (de_i) begin
-         mx = mx | ({{BUFF{1'b0}},d_i} << v);
+      if (push) begin
+         mx = mx | ({{BUFF{1'b0}},in_data_i} << v);
          vx = vx + IN;
       end
    end
@@ -32,7 +39,7 @@ module repacker #(
       if (~rst_ni) begin
          mem <= 0;
          v <= 0;
-      end else if (de_o) begin
+      end else if (pop) begin
          mem <= mx >> OUT;
          v <= vx - OUT;
       end else begin
@@ -41,6 +48,6 @@ module repacker #(
       end
    end
 
-   assign d_o = mx[OUT-1:0];
+   assign out_data_o = mx[OUT-1:0];
 
 endmodule

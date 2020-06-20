@@ -32,8 +32,6 @@ module fantasy #(
 
    // Cursors
    wire de_fall, h_save, v_save;
-   wire [$clog2(HBLKS)-1:0] ht_cur;
-   wire [$clog2(VBLKS)-1:0] vt_cur;
    cursor #(
       .HP (HP),
       .VP (VP),
@@ -50,8 +48,8 @@ module fantasy #(
       .de_fall_o (de_fall),
       .h_save_o (h_save),
       .v_save_o (v_save),
-      .ht_cur_o (ht_cur),
-      .vt_cur_o (vt_cur)
+      .ht_cur_o (),
+      .vt_cur_o ()
    );
 
    // Blk mode
@@ -62,9 +60,6 @@ module fantasy #(
       .PXS (KH * KV)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
-      .ht_i (ht_cur),
-      .vt_i (vt_cur),
-      .vs_i (vin_vs_i),
       .h_save_i (h_save),
       .v_save_i (v_save),
       .de_i (vin_de_i),
