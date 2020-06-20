@@ -136,7 +136,7 @@ module top #(
    wire [1:0] AXI_RRESP;
    wire [5:0] AXI_BID;
    wire [5:0] AXI_RID;
-   wire [31:0] AXI_RDATA;
+   wire [63:0] AXI_RDATA;
    wire [7:0] AXI_RCOUNT;
    wire [7:0] AXI_WCOUNT;
    wire [2:0] AXI_RACOUNT;
@@ -169,7 +169,7 @@ module top #(
    wire [5:0] AXI_ARID;
    wire [5:0] AXI_AWID;
    wire [5:0] AXI_WID;
-   wire [31:0] AXI_WDATA;
+   wire [63:0] AXI_WDATA;
    wire [3:0] AXI_WSTRB;
 
    dark_fantasy #(

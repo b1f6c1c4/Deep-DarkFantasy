@@ -412,7 +412,7 @@
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.AWUSER_WIDTH">0</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.BUSER_WIDTH">0</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.CLK_DOMAIN"/>
-        <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.DATA_WIDTH">32</spirit:configurableElementValue>
+        <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.DATA_WIDTH">64</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.FREQ_HZ">100000000</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.HAS_BRESP">1</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.S_AXI_HP0.HAS_BURST">1</spirit:configurableElementValue>
@@ -1220,7 +1220,7 @@ igned#unassigned#unassigned#unassigned#unassigned#unassigned#unassigned#unassign
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_GP0_ID_WIDTH">6</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_GP1_FREQMHZ">10</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_GP1_ID_WIDTH">6</spirit:configurableElementValue>
-        <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_HP0_DATA_WIDTH">32</spirit:configurableElementValue>
+        <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_HP0_DATA_WIDTH">64</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_HP0_FREQMHZ">10</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_HP0_ID_WIDTH">6</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_S_AXI_HP1_DATA_WIDTH">32</spirit:configurableElementValue>
