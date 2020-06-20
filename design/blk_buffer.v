@@ -50,11 +50,11 @@ module blk_buffer #(
 
    wire [3*DEPTH-1:0] b0n;
    assign b0n[3*DEPTH-1:2*DEPTH] = brgb[0][3*DEPTH-1:2*DEPTH] + 109 * wd_i[23:16];
-   assign b0n[2*DEPTH-1:1*DEPTH] = brgb[0][2*DEPTH-1:1*DEPTH] + 366 * wd_i[15:8];
-   assign b0n[1*DEPTH-1:0*DEPTH] = brgb[0][1*DEPTH-1:0*DEPTH] + 37 * wd_i[7:0];
+   assign b0n[2*DEPTH-1:1*DEPTH] = brgb[0][2*DEPTH-1:1*DEPTH] + 37 * wd_i[15:8];
+   assign b0n[1*DEPTH-1:0*DEPTH] = brgb[0][1*DEPTH-1:0*DEPTH] + 366 * wd_i[7:0];
    wire [DEPTH-1:0] bzr = brgb[HBLKS-1][3*DEPTH-1:2*DEPTH];
-   wire [DEPTH-1:0] bzg = brgb[HBLKS-1][2*DEPTH-1:1*DEPTH];
-   wire [DEPTH-1:0] bzb = brgb[HBLKS-1][1*DEPTH-1:0*DEPTH];
+   wire [DEPTH-1:0] bzb = brgb[HBLKS-1][2*DEPTH-1:1*DEPTH];
+   wire [DEPTH-1:0] bzg = brgb[HBLKS-1][1*DEPTH-1:0*DEPTH];
 
    genvar i, j;
    generate
@@ -71,7 +71,7 @@ module blk_buffer #(
          always @(posedge clk_i) begin
             if (h_save_r) begin
                if (i == HBLKS - 1) begin
-                  bt[i] <= (bzr + bzg + bzg) >= THRES;
+                  bt[i] <= (bzr + bzb + bzg) >= THRES;
                end else begin
                   bt[i] <= bt[i + 1];
                end

@@ -38,9 +38,10 @@ module rfifo #(
       end
    end
 
-   wire [WLEN-1:0] wt = wptr + BURST_LEN;
    always @(*) begin
-      if (wptr < rptr) begin
+      if (~rst_ni) begin
+         in_rdy_o = 0;
+      end else if (wptr < rptr) begin
          in_rdy_o = rptr - wptr > BURST_LEN;
       end else begin
          in_rdy_o = wptr - rptr < LEN - BURST_LEN;
@@ -91,9 +92,10 @@ module wfifo #(
       end
    end
 
-   wire [WLEN-1:0] wt = wptr + BURST_LEN;
    always @(*) begin
-      if (wptr < rptr) begin
+      if (~rst_ni) begin
+         out_val_o = 0;
+      end else if (wptr < rptr) begin
          out_val_o = rptr - wptr < LEN - BURST_LEN;
       end else begin
          out_val_o = wptr - rptr > BURST_LEN;
