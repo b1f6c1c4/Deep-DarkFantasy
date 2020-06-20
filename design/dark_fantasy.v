@@ -93,6 +93,7 @@ module dark_fantasy #(
    ) i_axi_delayer (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
+      .wen_i (~sw_i[3]),
       .vs_i (vs_i),
       .de_i (de_i),
       .data_i (data_i),

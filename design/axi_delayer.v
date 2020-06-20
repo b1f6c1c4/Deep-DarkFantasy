@@ -1,11 +1,12 @@
 module axi_delayer #(
    parameter H_WIDTH = 1920,
    parameter V_HEIGHT = 1080,
-   parameter BASE = 32'h0a000000
+   parameter BASE = 32'h20000000
 ) (
    input clk_i,
    input rst_ni,
 
+   input wen_i,
    input vs_i,
    input de_i,
    input [23:0] data_i,
@@ -67,9 +68,9 @@ module axi_delayer #(
    reg arval, rwait;
    wire fifo_ready;
    rfifo #(
-      .WLEN (8),
+      .WLEN (10),
       .DEPTH (24),
-      .BURST_LEN (16)
+      .BURST_LEN (32)
    ) i_rfifo (
       .clk_i (clk_i),
       .rst_ni (rst_ni && ~vs_rise),
@@ -92,15 +93,18 @@ module axi_delayer #(
    end
 
    always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni || vs_rise) begin
+      if (~rst_ni) begin
          arval <= 0;
          rwait <= 0;
-      end else if (~rwait && fifo_ready) begin
-         arval <= 1;
-         rwait <= 1;
+      end else if (vs_rise) begin
+         arval <= 0;
+         rwait <= 0;
       end else if (arval && m_axi_arready) begin
          arval <= 0;
-      end else if (rwait && m_axi_rlast) begin
+      end else if ((~rwait || m_axi_rvalid) && fifo_ready) begin
+         arval <= 1;
+         rwait <= 1;
+      end else if (rwait && m_axi_rvalid) begin
          rwait <= 0;
       end
    end
@@ -111,7 +115,7 @@ module axi_delayer #(
    assign m_axi_arsize = 3'b010; // 4 bytes each transfer
    assign m_axi_arprot = 0;
    assign m_axi_araddr = raddr;
-   assign m_axi_arcache = 4'b0011; // Bufferable, Cacheable
+   assign m_axi_arcache = 0;
    assign m_axi_arlen = 4'b1111; // 16 transfers each
    assign m_axi_arqos = 0;
    assign m_axi_arid = 0;
@@ -125,9 +129,9 @@ module axi_delayer #(
    wire [23:0] wdata;
    wire fifo_valid;
    wfifo #(
-      .WLEN (8),
+      .WLEN (10),
       .DEPTH (24),
-      .BURST_LEN (16)
+      .BURST_LEN (32)
    ) i_wfifo (
       .clk_i (clk_i),
       .rst_ni (rst_ni && ~vs_rise),
@@ -161,14 +165,17 @@ module axi_delayer #(
    end
 
    always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni || vs_rise) begin
+      if (~rst_ni) begin
          awval <= 0;
          wwait <= 0;
-      end else if (~wwait && fifo_valid) begin
-         awval <= 1;
-         wwait <= 1;
+      end else if (vs_rise) begin
+         awval <= 0;
+         wwait <= 0;
       end else if (awval && m_axi_awready) begin
          awval <= 0;
+      end else if ((~wwait || &wcnt) && fifo_valid && wen_i) begin
+         awval <= 1;
+         wwait <= 1;
       end else if (wwait && &wcnt) begin
          wwait <= 0;
       end
@@ -180,7 +187,7 @@ module axi_delayer #(
    assign m_axi_awsize = 3'b010; // 4 bytes each transfer
    assign m_axi_awprot = 0;
    assign m_axi_awaddr = waddr;
-   assign m_axi_awcache = 4'b0011; // Bufferable, Cacheable
+   assign m_axi_awcache = 0;
    assign m_axi_awlen = 4'b1111; // 16 transfers each
    assign m_axi_awqos = 0;
    assign m_axi_awid = 0;
