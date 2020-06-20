@@ -6,6 +6,7 @@ module axi_delayer #(
    input clk_i,
    input rst_ni,
 
+   input ren_i,
    input wen_i,
    input vs_i,
    input de_i,
@@ -68,8 +69,8 @@ module axi_delayer #(
 
    // M_AXI_R -> repacker -> fifo -> vout
 
-   wire rde;
-   wire [23:0] rd;
+   wire rfval, rfrdy;
+   wire [23:0] rfdata;
    repacker #(
       .IN (64),
       .OUT (24),
@@ -80,63 +81,47 @@ module axi_delayer #(
       .in_val_i (m_axi_rvalid),
       .in_data_i (m_axi_rdata),
       .in_rdy_o (m_axi_rready),
-      .out_val_o (rde),
-      .out_data_o (rd),
-      .out_rdy_i (1)
+      .out_val_o (rfval),
+      .out_data_o (rfdata),
+      .out_rdy_i (rfrdy)
    );
 
-   wire fifo_ready;
    rfifo #(
-      .WLEN (10),
+      .WLEN (8),
       .DEPTH (24),
-      .BURST_LEN (48)
+      .BURST_LEN (1)
    ) i_rfifo (
       .clk_i (clk_i),
       .rst_ni (rst_ni && ~vs_rise),
-      .in_incr_i (rde),
-      .in_data_i (rd),
-      .in_rdy_o (fifo_ready),
+      .in_incr_i (rfval && rfrdy),
+      .in_data_i (rfdata),
+      .in_rdy_o (rfrdy),
       .out_incr_i (de_i),
       .out_data_o (data_o)
    );
 
-   reg arval, rwait;
+   reg arval;
    reg [31:0] raddr;
-   reg rglast;
+   wire rglast = raddr == ((bs ? BBASE : ABASE) + SIZE - 16 * 8);
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          raddr <= ABASE;
-         rglast <= 0;
       end else if (vs_rise) begin
          raddr <= bs ? ABASE : BBASE;
-         rglast <= 0;
       end else if (arval && m_axi_arready) begin
          raddr <= raddr + 16 * 8;
-         if (bs) begin
-            rglast <= raddr == BBASE + SIZE - 16 * 8;
-         end else begin
-            rglast <= raddr == ABASE + SIZE - 16 * 8;
-         end
       end
    end
 
-   reg [5:0] rid;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          arval <= 0;
-         rwait <= 0;
-         rid <= 0;
       end else if (vs_rise) begin
          arval <= 0;
-         rwait <= 0;
       end else if (arval && m_axi_arready) begin
-         arval <= 0;
-      end else if (~rwait && fifo_ready && ~rglast) begin
+         arval <= ~rglast && ren_i;
+      end else if (ren_i) begin
          arval <= 1;
-         rwait <= 1;
-         rid <= rid + 1;
-      end else if (rwait && m_axi_rvalid && m_axi_rid == rid) begin
-         rwait <= 0;
       end
    end
 
@@ -149,7 +134,7 @@ module axi_delayer #(
    assign m_axi_arcache = 0;
    assign m_axi_arlen = 4'b1111; // 16 transfers each
    assign m_axi_arqos = 0;
-   assign m_axi_arid = rid;
+   assign m_axi_arid = 0;
 
    // assign m_axi_rready;
 
@@ -175,7 +160,7 @@ module axi_delayer #(
 
    wire fifo_valid;
    wfifo #(
-      .WLEN (8),
+      .WLEN (7),
       .DEPTH (64),
       .BURST_LEN (16)
    ) i_wfifo (
@@ -188,7 +173,7 @@ module axi_delayer #(
       .out_incr_i (m_axi_wvalid && m_axi_wready)
    );
 
-   reg awval, wwait, wemit;
+   reg awval, wemit;
    reg [31:0] waddr;
    reg wglast;
    always @(posedge clk_i, negedge rst_ni) begin
@@ -209,36 +194,24 @@ module axi_delayer #(
    end
 
    reg [3:0] wcnt;
-   reg [5:0] wid, wid_r;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          awval <= 0;
-         wwait <= 0;
          wemit <= 0;
          wcnt <= 0;
-         wid <= 0;
-         wid_r <= 0;
       end else if (vs_rise) begin
          awval <= 0;
-         wwait <= 0;
          wemit <= 0;
          wcnt <= 0;
       end else if (awval && m_axi_awready) begin
          awval <= 0;
          wcnt <= 0;
-      end else if (~wwait && fifo_valid && ~wglast && wen_i) begin
+      end else if ((~wemit || &wcnt) && fifo_valid && ~wglast && wen_i) begin
          awval <= 1;
-         wwait <= 1;
-         wid <= wid + 1;
-         if (~wemit || &wcnt) begin
-            wemit <= 1;
-            wid_r <= wid + 1;
-         end
-      end else if (wwait && m_axi_wready && m_axi_wid == wid) begin
-         wwait <= 0;
+         wemit <= 1;
+         wcnt <= 0;
       end else if (wemit && m_axi_wlast) begin
-         wemit <= wwait;
-         wid_r <= wid;
+         wemit <= 0;
          wcnt <= 0;
       end else if (wemit && m_axi_wready) begin
          wcnt <= wcnt + 1;
@@ -254,13 +227,13 @@ module axi_delayer #(
    assign m_axi_awcache = 0;
    assign m_axi_awlen = 4'b1111; // 16 transfers each
    assign m_axi_awqos = 0;
-   assign m_axi_awid = wid;
+   assign m_axi_awid = 0;
 
    assign m_axi_wlast = &wcnt;
    assign m_axi_wvalid = wemit;
    // assign m_axi_wdata;
    assign m_axi_wstrb = 8'b11111111;
-   assign m_axi_wid = wid_r;
+   assign m_axi_wid = 0;
 
    assign m_axi_bready = 1;
 

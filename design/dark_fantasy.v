@@ -4,7 +4,8 @@ module dark_fantasy #(
    parameter H_TOTAL  = 2200,
    parameter V_HEIGHT = 1080,
    parameter KH = 30,
-   parameter KV = 30
+   parameter KV = 30,
+   parameter BASE = 32'h2000000
 ) (
    input clk_i,
    input rst_ni,
@@ -89,10 +90,12 @@ module dark_fantasy #(
 
    axi_delayer #(
       .H_WIDTH (H_WIDTH),
-      .V_HEIGHT (V_HEIGHT)
+      .V_HEIGHT (V_HEIGHT),
+      .BASE (BASE)
    ) i_axi_delayer (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
+      .ren_i (~sw_i[2]),
       .wen_i (~sw_i[3]),
       .vs_i (vs_i),
       .de_i (de_i),
