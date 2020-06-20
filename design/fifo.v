@@ -1,17 +1,17 @@
 module rfifo #(
    parameter WLEN = 8,
-   parameter DEPTH = 24,
+   parameter DEPTH = 8,
    parameter BURST_LEN = 16
 ) (
    input clk_i,
    input rst_ni,
 
    input in_incr_i,
-   input [23:0] in_data_i,
+   input [DEPTH-1:0] in_data_i,
    output reg in_rdy_o,
 
    input out_incr_i,
-   output [23:0] out_data_o
+   output [DEPTH-1:0] out_data_o
 );
    localparam LEN = 1 << WLEN;
 
@@ -54,17 +54,17 @@ endmodule
 
 module wfifo #(
    parameter WLEN = 8,
-   parameter DEPTH = 24,
+   parameter DEPTH = 8,
    parameter BURST_LEN = 16
 ) (
    input clk_i,
    input rst_ni,
 
    input in_incr_i,
-   input [23:0] in_data_i,
+   input [DEPTH-1:0] in_data_i,
 
    output reg out_val_o,
-   output [23:0] out_data_o,
+   output [DEPTH-1:0] out_data_o,
    input out_incr_i
 );
    localparam LEN = 1 << WLEN;
