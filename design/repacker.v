@@ -32,7 +32,7 @@ module repacker #(
       for (i = 0; i < IN + BUFF; i = i + 1) begin : gi
          always @(*) begin
             if (v <= i && i < v + IN && push) begin
-               mx[i] = in_data_i >> (i - v);
+               mx[i] = in_data_i >> (W*(i - v));
             end else if (i < BUFF && i < v) begin
                mx[i] = mem[i];
             end else begin
