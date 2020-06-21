@@ -47,7 +47,11 @@ module repacker #(
             end else if (srst_i) begin
                mem[i] <= 0;
             end else if (pop) begin
-               mem[i] <= mx[i + OUT];
+               if (i + OUT < IN + BUFF) begin
+                  mem[i] <= mx[i + OUT];
+               end else begin
+                  mem[i] <= 0;
+               end
             end else begin
                mem[i] <= mx[i];
             end
