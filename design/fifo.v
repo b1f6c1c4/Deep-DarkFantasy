@@ -5,6 +5,7 @@ module rfifo #(
 ) (
    input clk_i,
    input rst_ni,
+   input srst_i,
 
    input in_incr_i,
    input [DEPTH-1:0] in_data_i,
@@ -20,6 +21,9 @@ module rfifo #(
 
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
+         wptr <= 0;
+         rptr <= 0;
+      end else if (srst_i) begin
          wptr <= 0;
          rptr <= 0;
       end else begin
@@ -41,6 +45,8 @@ module rfifo #(
    always @(*) begin
       if (~rst_ni) begin
          in_rdy_o = 0;
+      end else if (srst_i) begin
+         in_rdy_o = 0;
       end else if (wptr < rptr) begin
          in_rdy_o = rptr - wptr > BURST_LEN;
       end else begin
@@ -59,6 +65,7 @@ module wfifo #(
 ) (
    input clk_i,
    input rst_ni,
+   input srst_i,
 
    input in_incr_i,
    input [DEPTH-1:0] in_data_i,
@@ -74,6 +81,9 @@ module wfifo #(
 
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
+         wptr <= 0;
+         rptr <= 0;
+      end else if (srst_i) begin
          wptr <= 0;
          rptr <= 0;
       end else begin
@@ -94,6 +104,8 @@ module wfifo #(
 
    always @(*) begin
       if (~rst_ni) begin
+         out_val_o = 0;
+      end else if (srst_i) begin
          out_val_o = 0;
       end else if (wptr < rptr) begin
          out_val_o = rptr - wptr < LEN - BURST_LEN;
