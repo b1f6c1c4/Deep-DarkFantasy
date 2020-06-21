@@ -47,12 +47,12 @@ module blk_buffer #(
    reg [DEPTH-1:0] bacc[0:HBLKS-2];
 
    wire [47:0] p_1, p_2, p_3, p_4;
-   wire p_4s;
 
    DSP48E1 #(
       .AREG (1),
       .CREG (1),
-      .MREG (0)
+      .MREG (0),
+      .DREG (1), .ADREG (1)
    ) i_dsp_1 (
       .A (wd_i[23:16]),
       .B (18'd109),
@@ -69,9 +69,9 @@ module blk_buffer #(
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
       .D (0),
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (1), .CED (1), .CEM (1), .CEP (1), .CEAD (1),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (1), .CED (0), .CEM (0), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (~rst_ni), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (~rst_ni), .RSTD (0), .RSTM (0), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
@@ -81,7 +81,9 @@ module blk_buffer #(
 
    DSP48E1 #(
       .AREG (2),
-      .MREG (0)
+      .CREG (0),
+      .MREG (0),
+      .DREG (1), .ADREG (1)
    ) i_dsp_2 (
       .A (wd_i[15:8]),
       .B (18'd37),
@@ -97,9 +99,9 @@ module blk_buffer #(
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
       .D (0),
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (1), .CED (1), .CEM (1), .CEP (1), .CEAD (1),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (0), .CEM (0), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (~rst_ni), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (0), .RSTM (0), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
@@ -109,7 +111,9 @@ module blk_buffer #(
 
    DSP48E1 #(
       .AREG (2),
-      .MREG (1)
+      .CREG (0),
+      .MREG (1),
+      .DREG (1), .ADREG (1)
    ) i_dsp_3 (
       .A (wd_i[7:0]),
       .B (18'd366),
@@ -125,9 +129,9 @@ module blk_buffer #(
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
       .D (0),
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (1), .CED (1), .CEM (1), .CEP (1), .CEAD (1),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (0), .CEM (1), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (~rst_ni), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (0), .RSTM (~rst_ni), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
@@ -137,34 +141,34 @@ module blk_buffer #(
 
    DSP48E1 #(
       .OPMODEREG (1),
-      .MASK (48'h7fffffffffff),
-      .PATTERN (48'h800000000000),
-      .USE_MULT ("NONE"),
-      .USE_PATTERN_DETECT ("PATDET")
+      .CREG (0),
+      .MREG (0),
+      .DREG (1), .ADREG (1),
+      .USE_MULT ("NONE")
    ) i_dsp_4 (
       .A (0),
       .B (0),
-      .C (~THRES + 1),
+      .C (0),
       .PCIN (p_3),
       .PCOUT (),
       .P (p_4),
 
       // h_clear_rrr == 0: X = P_r, Y = 0, Z = PCIN
-      // h_clear_rrr == 1: X = 0, Y = C_r, Z = PCIN
+      // h_clear_rrr == 1: X = 0, Y = 0, Z = PCIN
       .OPMODE (h_clear_rrr ? 7'b0011100 : 7'b0010010),
       .ALUMODE (4'b0000), // P_r <= Z + X + Y + CIN
       .INMODE (5'b00010),
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
       .D (0),
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (1), .CED (1), .CEM (1), .CEP (1), .CEAD (1),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (0), .CEM (0), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (~rst_ni), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (0), .RSTM (0), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
       .ACOUT (), .BCOUT (), .CARRYOUT (), .CARRYCASCOUT (), .MULTSIGNOUT (),
-      .PATTERNDETECT (p_4s), .PATTERNBDETECT (), .OVERFLOW (), .UNDERFLOW ()
+      .PATTERNDETECT (), .PATTERNBDETECT (), .OVERFLOW (), .UNDERFLOW ()
    );
 
    reg bt[0:HBLKS-1];
@@ -194,7 +198,7 @@ module blk_buffer #(
                bt[i] <= 0;
             end else if (h_save_rrrrr) begin
                if (i == HBLKS - 1) begin
-                  bt[i] <= p_4s;
+                  bt[i] <= p_4 >= THRES;
                end else begin
                   bt[i] <= bt[i + 1];
                end
