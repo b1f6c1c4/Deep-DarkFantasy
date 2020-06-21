@@ -6,6 +6,7 @@ module fantasy #(
    parameter KH = 30,
    parameter KV = 30
 ) (
+   input rst_ni,
    input [3:0] sw_i,
    output [3:0] led_o,
 
@@ -41,6 +42,7 @@ module fantasy #(
       .VBLKS (VBLKS)
    ) i_cursor_in (
       .clk_i (vin_clk_i),
+      .rst_ni (rst_ni),
       .hs_i (vin_hs_i),
       .vs_i (vin_vs_i),
       .de_i (vin_de_i),
@@ -60,6 +62,7 @@ module fantasy #(
       .PXS (KH * KV)
    ) i_blk_buffer (
       .clk_i (vin_clk_i),
+      .rst_ni (rst_ni),
       .h_save_i (h_save),
       .v_save_i (v_save),
       .de_i (vin_de_i),

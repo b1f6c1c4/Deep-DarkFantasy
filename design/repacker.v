@@ -5,6 +5,7 @@ module repacker #(
 ) (
    input clk_i,
    input rst_ni,
+   input srst_i,
 
    input in_val_i,
    input [IN-1:0] in_data_i,
@@ -37,6 +38,9 @@ module repacker #(
 
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
+         mem <= 0;
+         v <= 0;
+      end else if (srst_i) begin
          mem <= 0;
          v <= 0;
       end else if (pop) begin

@@ -7,6 +7,7 @@ module cursor #(
    parameter VBLKS = 10
 ) (
    input clk_i,
+   input rst_ni,
    input hs_i,
    input vs_i,
    input de_i,
@@ -28,15 +29,19 @@ module cursor #(
    // Tile cursor
    reg [$clog2(HP)-1:0] hx_cur;
    reg [$clog2(VP)-1:0] vx_cur;
-   always @(posedge clk_i) begin
-      if (hs_i) begin
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         hx_cur <= 0;
+      end else if (hs_i) begin
          hx_cur <= 0;
       end else if (de_i) begin
          hx_cur <= hx_cur + 1;
       end
    end
-   always @(posedge clk_i) begin
-      if (vs_i) begin
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         vx_cur <= 0;
+      end else if (vs_i) begin
          vx_cur <= 0;
       end else if (de_fall_o) begin
          vx_cur <= vx_cur + 1;
@@ -47,8 +52,11 @@ module cursor #(
    reg [$clog2(VP)-1:0] vp_cur;
    assign h_save_o = de_i && (hp_cur == KH-1 || hx_cur == HP-1);
    assign v_save_o = de_fall_o && (vp_cur == KV-1 || vx_cur == VP-1);
-   always @(posedge clk_i) begin
-      if (vs_i) begin
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         hp_cur <= 0;
+         vp_cur <= 0;
+      end else if (vs_i) begin
          hp_cur <= 0;
          vp_cur <= 0;
       end else begin
@@ -60,8 +68,11 @@ module cursor #(
          end
       end
    end
-   always @(posedge clk_i) begin
-      if (vs_i) begin
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         ht_cur_o <= 0;
+         vt_cur_o <= 0;
+      end else if (vs_i) begin
          ht_cur_o <= 0;
          vt_cur_o <= 0;
       end else begin

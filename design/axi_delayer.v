@@ -67,7 +67,24 @@ module axi_delayer #(
    assign m_axi_aclk = clk_i;
 
 
-   // M_AXI_R -> repacker -> fifo -> vout
+   // M_AXI_R -> | -> repacker -> fifo -> vout
+
+   reg rbuffed;
+   reg [63:0] rbuff;
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         rbuffed <= 0;
+         rbuff <= 0;
+      end else if (vs_rise) begin
+         rbuffed <= 0;
+         rbuff <= 0;
+      end else if (m_axi_rvalid && m_axi_rready) begin
+         rbuffed <= 1;
+         rbuff <= m_axi_rdata;
+      end else if (rbuffed && m_axi_rready) begin
+         rbuffed <= 0;
+      end
+   end
 
    wire rfval, rfrdy;
    wire [23:0] rfdata;
@@ -77,9 +94,10 @@ module axi_delayer #(
       .BUFF (384)
    ) i_rpacker (
       .clk_i (clk_i),
-      .rst_ni (rst_ni && ~vs_rise),
-      .in_val_i (m_axi_rvalid),
-      .in_data_i (m_axi_rdata),
+      .rst_ni (rst_ni),
+      .srst_i (vs_rise),
+      .in_val_i (rbuffed),
+      .in_data_i (rbuff),
       .in_rdy_o (m_axi_rready),
       .out_val_o (rfval),
       .out_data_o (rfdata),
@@ -92,7 +110,8 @@ module axi_delayer #(
       .BURST_LEN (1)
    ) i_rfifo (
       .clk_i (clk_i),
-      .rst_ni (rst_ni && ~vs_rise),
+      .rst_ni (rst_ni),
+      .srst_i (vs_rise),
       .in_incr_i (rfval && rfrdy),
       .in_data_i (rfdata),
       .in_rdy_o (rfrdy),
@@ -116,12 +135,10 @@ module axi_delayer #(
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          arval <= 0;
-      end else if (vs_rise) begin
-         arval <= 0;
+      end else if (vs_rise && ren_i) begin
+         arval <= 1;
       end else if (arval && m_axi_arready) begin
          arval <= ~rglast && ren_i;
-      end else if (ren_i) begin
-         arval <= 1;
       end
    end
 
@@ -150,6 +167,7 @@ module axi_delayer #(
    ) i_wpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
+      .srst_i (vs_rise),
       .in_val_i (de_i),
       .in_data_i (data_i),
       .in_rdy_o (),
@@ -165,7 +183,8 @@ module axi_delayer #(
       .BURST_LEN (16)
    ) i_wfifo (
       .clk_i (clk_i),
-      .rst_ni (rst_ni && ~vs_rise),
+      .rst_ni (rst_ni),
+      .srst_i (vs_rise),
       .in_incr_i (wde),
       .in_data_i (wd),
       .out_val_o (fifo_valid),
@@ -206,6 +225,9 @@ module axi_delayer #(
       end else if (awval && m_axi_awready) begin
          awval <= 0;
          wcnt <= 0;
+         if (wemit) begin
+            wcnt <= wcnt + 1;
+         end
       end else if ((~wemit || &wcnt) && fifo_valid && ~wglast && wen_i) begin
          awval <= 1;
          wemit <= 1;

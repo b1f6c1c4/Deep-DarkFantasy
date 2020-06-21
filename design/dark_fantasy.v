@@ -73,6 +73,7 @@ module dark_fantasy #(
       .KH (KH),
       .KV (KV)
    ) i_fantasy (
+      .rst_ni (rst_ni),
       .sw_i (sw_i),
       .led_o (led_o),
 
