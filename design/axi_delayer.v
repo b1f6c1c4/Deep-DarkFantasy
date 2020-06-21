@@ -196,17 +196,6 @@ module axi_delayer #(
       .out_incr_i (wde2) // m_axi_wvalid && m_axi_wready)
    );
 
-   always @(*) begin
-      wde2 = 0;
-      if (~vs_rise) begin
-         wde2 = 0;
-      end else if ((~m_axi_wvalid || m_axi_wlast) && fifo_valid && ~wglast && wen_i) begin
-         wde2 = 1;
-      end else if (m_axi_wvalid && m_axi_wready && ~m_axi_wlast) begin
-         wde2 = 1;
-      end
-   end
-
    reg awval, wemit;
    reg [31:0] waddr, wladdr;
    reg wglast;
@@ -222,6 +211,17 @@ module axi_delayer #(
       end else if (awval && m_axi_awready) begin
          waddr <= waddr + 16 * 8;
          wglast <= waddr == wladdr;
+      end
+   end
+
+   always @(*) begin
+      wde2 = 0;
+      if (~vs_rise) begin
+         wde2 = 0;
+      end else if ((~m_axi_wvalid || m_axi_wlast) && fifo_valid && ~wglast && wen_i) begin
+         wde2 = 1;
+      end else if (m_axi_wvalid && m_axi_wready && ~m_axi_wlast) begin
+         wde2 = 1;
       end
    end
 
