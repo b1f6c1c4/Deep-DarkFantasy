@@ -1,18 +1,19 @@
 module repacker #(
-   parameter IN = 24,
-   parameter OUT = 64,
-   parameter BUFF = 192
+   parameter IN = 3,
+   parameter OUT = 8,
+   parameter BUFF = 24,
+   parameter W = 8
 ) (
    input clk_i,
    input rst_ni,
    input srst_i,
 
    input in_val_i,
-   input [IN-1:0] in_data_i,
+   input [W*IN-1:0] in_data_i,
    output in_rdy_o,
 
    output out_val_o,
-   output [OUT-1:0] out_data_o,
+   output [W*OUT-1:0] out_data_o,
    input out_rdy_i
 );
 
@@ -20,38 +21,51 @@ module repacker #(
    wire pop = out_val_o && out_rdy_i;
 
    reg [$clog2(BUFF)-1:0] v;
-   assign out_val_o = push ? v >= OUT - 1 : v >= OUT;
+   assign out_val_o = v >= OUT;
    assign in_rdy_o = v + IN <= BUFF;
 
-   reg [BUFF-1:0] mem;
-   reg [IN+BUFF-1:0] mx;
-   reg [$clog2(IN+BUFF)-1:0] vx;
+   reg [W-1:0] mem[0:BUFF-1];
+   reg [W-1:0] mx[0:IN+BUFF-1];
 
-   always @(*) begin
-      mx = {{IN{1'b0}},mem};
-      vx = v;
-      if (push) begin
-         mx = mx | ({{BUFF{1'b0}},in_data_i} << v);
-         vx = vx + IN;
+   genvar i;
+   generate
+      for (i = 0; i < IN + BUFF; i = i + 1) begin : gi
+         always @(*) begin
+            if (v <= i && i < v + IN && push) begin
+               mx[i] = in_data_i >> (i - v);
+            end else if (i < BUFF && i < v) begin
+               mx[i] = mem[i];
+            end else begin
+               mx[i] = 0;
+            end
+         end
       end
-   end
+      for (i = 0; i < BUFF; i = i + 1) begin : gm
+         always @(posedge clk_i, negedge rst_ni) begin
+            if (~rst_ni) begin
+               mem[i] <= 0;
+            end else if (srst_i) begin
+               mem[i] <= 0;
+            end else if (pop) begin
+               mem[i] <= mx[i + OUT];
+            end else begin
+               mem[i] <= mx[i];
+            end
+         end
+      end
+      for (i = 0; i < OUT; i = i + 1) begin : go
+         assign out_data_o[W*i+W-1:W*i] = mx[i];
+      end
+   endgenerate
 
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
-         mem <= 0;
          v <= 0;
       end else if (srst_i) begin
-         mem <= 0;
          v <= 0;
-      end else if (pop) begin
-         mem <= mx >> OUT;
-         v <= vx - OUT;
       end else begin
-         mem <= mx[BUFF-1:0];
-         v <= vx;
+         v <= v + (push ? IN : 0) - (pop ? OUT : 0);
       end
    end
-
-   assign out_data_o = mx[OUT-1:0];
 
 endmodule
