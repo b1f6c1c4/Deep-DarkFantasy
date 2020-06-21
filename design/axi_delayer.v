@@ -216,7 +216,7 @@ module axi_delayer #(
 
    always @(*) begin
       wde2 = 0;
-      if (~vs_rise) begin
+      if (vs_rise) begin
          wde2 = 0;
       end else if ((~m_axi_wvalid || m_axi_wlast) && fifo_valid && ~wglast && wen_i) begin
          wde2 = 1;
