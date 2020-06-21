@@ -89,9 +89,9 @@ module axi_delayer #(
    wire rfval, rfrdy;
    wire [23:0] rfdata;
    repacker #(
-      .IN (64),
-      .OUT (24),
-      .BUFF (384)
+      .IN (8),
+      .OUT (3),
+      .BUFF (48)
    ) i_rpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
@@ -105,7 +105,7 @@ module axi_delayer #(
    );
 
    rfifo #(
-      .WLEN (8),
+      .WLEN (7),
       .DEPTH (24),
       .BURST_LEN (1)
    ) i_rfifo (
@@ -120,13 +120,15 @@ module axi_delayer #(
    );
 
    reg arval;
-   reg [31:0] raddr;
-   wire rglast = raddr == ((bs ? BBASE : ABASE) + SIZE - 16 * 8);
+   reg [31:0] raddr, rladdr;
+   wire rglast = raddr == rladdr;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          raddr <= ABASE;
+         rladdr <= ABASE + SIZE - 16 * 8;
       end else if (vs_rise) begin
          raddr <= bs ? ABASE : BBASE;
+         rladdr <= (bs ? ABASE : BBASE) + SIZE - 16 * 8;
       end else if (arval && m_axi_arready) begin
          raddr <= raddr + 16 * 8;
       end
@@ -156,14 +158,14 @@ module axi_delayer #(
    // assign m_axi_rready;
 
 
-   // vin -> repacker -> fifo -> M_AXI_W
+   // vin -> repacker -> fifo -> | -> M_AXI_W
 
    wire wde;
    wire [63:0] wd;
    repacker #(
-      .IN (24),
-      .OUT (64),
-      .BUFF (88)
+      .IN (3),
+      .OUT (8),
+      .BUFF (11)
    ) i_wpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
@@ -177,8 +179,10 @@ module axi_delayer #(
    );
 
    wire fifo_valid;
+   reg wde2;
+   wire [63:0] wd2;
    wfifo #(
-      .WLEN (7),
+      .WLEN (6),
       .DEPTH (64),
       .BURST_LEN (16)
    ) i_wfifo (
@@ -188,55 +192,70 @@ module axi_delayer #(
       .in_incr_i (wde),
       .in_data_i (wd),
       .out_val_o (fifo_valid),
-      .out_data_o (m_axi_wdata),
-      .out_incr_i (m_axi_wvalid && m_axi_wready)
+      .out_data_o (wd2),
+      .out_incr_i (wde2) // m_axi_wvalid && m_axi_wready)
    );
 
+   always @(*) begin
+      wde2 = 0;
+      if (~vs_rise) begin
+         wde2 = 0;
+      end else if ((~m_axi_wvalid || m_axi_wlast) && fifo_valid && ~wglast && wen_i) begin
+         wde2 = 1;
+      end else if (m_axi_wvalid && m_axi_wready && ~m_axi_wlast) begin
+         wde2 = 1;
+      end
+   end
+
    reg awval, wemit;
-   reg [31:0] waddr;
+   reg [31:0] waddr, wladdr;
    reg wglast;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          waddr <= BBASE;
+         wladdr <= BBASE + SIZE - 16 * 8;
          wglast <= 0;
       end else if (vs_rise) begin
          waddr <= bs ? BBASE : ABASE;
+         wladdr <= (bs ? BBASE : ABASE) + SIZE - 16 * 8;
          wglast <= 0;
       end else if (awval && m_axi_awready) begin
          waddr <= waddr + 16 * 8;
-         if (bs) begin
-            wglast <= waddr == ABASE + SIZE - 16 * 8;
-         end else begin
-            wglast <= waddr == BBASE + SIZE - 16 * 8;
-         end
+         wglast <= waddr == wladdr;
       end
    end
 
+   reg [63:0] wbuff;
    reg [3:0] wcnt;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          awval <= 0;
          wemit <= 0;
          wcnt <= 0;
+         wbuff <= 0;
       end else if (vs_rise) begin
          awval <= 0;
          wemit <= 0;
          wcnt <= 0;
+         wbuff <= 0;
       end else if (awval && m_axi_awready) begin
          awval <= 0;
          wcnt <= 0;
          if (wemit) begin
             wcnt <= wcnt + 1;
+            wbuff <= wd2;
          end
       end else if ((~wemit || &wcnt) && fifo_valid && ~wglast && wen_i) begin
          awval <= 1;
          wemit <= 1;
          wcnt <= 0;
-      end else if (wemit && m_axi_wlast) begin
+      end else if (wemit && m_axi_wready && m_axi_wlast) begin
          wemit <= 0;
          wcnt <= 0;
+         wbuff <= wd2;
       end else if (wemit && m_axi_wready) begin
          wcnt <= wcnt + 1;
+         wbuff <= wd2;
       end
    end
 
@@ -253,7 +272,7 @@ module axi_delayer #(
 
    assign m_axi_wlast = &wcnt;
    assign m_axi_wvalid = wemit;
-   // assign m_axi_wdata;
+   assign m_axi_wdata = wbuff;
    assign m_axi_wstrb = 8'b11111111;
    assign m_axi_wid = 0;
 
