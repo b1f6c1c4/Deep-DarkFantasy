@@ -1,6 +1,9 @@
-setws build/fsbl/
+setws .
 
-createhw -name fsbl_hw -hwspec ../system.hdf
-createapp -name fsbl -app {Zynq MP FSBL} -proc psu_cortexa9_0 -hwproject fsbl_hw -os standalone
+createhw -name fsbl_hw -hwspec ../../system.hdf
+
+createapp -name fsbl -app {Zynq FSBL} -proc ps7_cortexa9_0 -hwproject fsbl_hw -os standalone
+
+configapp -app fsbl build-config release
+
 projects -build
-exec bootgen -arch zynq -image output.bif -w -o BOOT.bin

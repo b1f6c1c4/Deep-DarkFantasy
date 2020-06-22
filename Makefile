@@ -1,5 +1,6 @@
 VIVADO?=vivado
 XSCT?=xsct
+BOOTGEN?=bootgen
 DESIGN=$(wildcard design/*.v)
 CONSTR=$(wildcard constr/*.xdc)
 XCI=$(patsubst ip/%.xci,%,$(wildcard ip/*.xci))
@@ -20,6 +21,8 @@ build: build/output.bit
 
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
+
+image: build/BOOT.bin
 
 define IP_TEMPLATE
 
@@ -50,10 +53,13 @@ build/output.bit: script/bitstream.tcl build/post_route.dcp
 build/system.hdf: script/fsbl.tcl
 	./script/launch.sh $<
 
-build/BOOT.bin: script/fsbl-sdk.tcl build/system.hdf
-	$(XSCT) $<
+build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf: script/fsbl-sdk.tcl build/system.hdf
+	./script/launch-sdk.sh $<
+
+build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/output.bit
+	$(BOOTGEN) -arch zynq -image $< -w -o build/BOOT.bin
 
 clean:
 	rm -rf build/
 
-.PHONY: program build clean
+.PHONY: program build clean image
