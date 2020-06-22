@@ -1,3 +1,5 @@
+set_param general.maxThreads 8
+
 create_project -force -part $::env(PART) fsbl ./fsbl/
 
 create_bd_design ps

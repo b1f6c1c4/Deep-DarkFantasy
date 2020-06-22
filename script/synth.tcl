@@ -1,4 +1,4 @@
-set_param general.maxThreads 32
+set_param general.maxThreads 8
 
 set_part $::env(PART)
 

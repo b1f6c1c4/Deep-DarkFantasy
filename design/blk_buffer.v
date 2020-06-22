@@ -72,7 +72,7 @@ module blk_buffer #(
       .MREG (0),
       .DREG (1), .ADREG (1)
    ) i_dsp_1 (
-      .A (wd_i[23:16]),
+      .A ({22'b0,wd_i[23:16]}),
       .B (18'd109),
       .C ({{(48-DEPTH){1'b0}},bacc0}), // Unsigned extension desired!
       .PCIN (0),
@@ -103,7 +103,7 @@ module blk_buffer #(
       .MREG (1),
       .DREG (1), .ADREG (1)
    ) i_dsp_2 (
-      .A (wd_i[15:8]),
+      .A ({22'b0,wd_i[15:8]}),
       .B (18'd37),
       .C (0),
       .PCIN (p_1),
@@ -133,7 +133,7 @@ module blk_buffer #(
       .MREG (1),
       .DREG (1), .ADREG (1)
    ) i_dsp_3 (
-      .A (wd_i[7:0]),
+      .A ({22'b0,wd_i[7:0]}),
       .B (18'd366),
       .C (0),
       .PCIN (p_2),

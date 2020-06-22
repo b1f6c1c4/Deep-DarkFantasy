@@ -18,7 +18,7 @@ By putting an FPGA between your video card and monitor.
 - You need an FPGA develop board with (at least) one HDMI input, one HDMI output, four buttons and four LEDs.
     - We officially support Alinx AX7Z100, which is based on Xilinx Zynq-7100, ADV7511, and SIL9013.
 - You need some software (with proper licenses, if needed) to program your device with *Deep:* Dark-Fantasy.
-    - We officially support Xilinx Vivado, version 2019.2.
+    - We officially support Xilinx Vivado, version 2018.2.
 
 ## TL;DR
 
@@ -130,8 +130,10 @@ Alternatively, you can reduce display resolution and reduce `H_TOTAL` correspond
 The project takes a while to build - usually several minutes to half an hour.
 Multicore won't help.
 ```bash
-# Specify your vivado installation
-VIVODO=/opt/Xilinix/Vivado/2019.2/bin/vivado
+# Specify your Xilinx Vivado installation
+# Specify your Xilinx SDK installation
+export VIVODO=/opt/xilinx/Vivado/2018.2
+export SDK=/opt/xilinx/SDK/2018.2
 # Perform synthsizing, implementation, and bitstream creation.
 # This may take a while, so be patient
 make

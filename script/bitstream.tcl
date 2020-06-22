@@ -1,3 +1,5 @@
+set_param general.maxThreads 8
+
 open_checkpoint post_route.dcp
 
 write_bitstream -force output.bit

@@ -3,7 +3,6 @@
 set -eo pipefail
 
 MY="$(realpath "$(dirname "$0")")"
-[ -z "$VIVADO" ] && VIVADO=vivado
 
 TCL="$1"
 shift
@@ -60,6 +59,6 @@ elif [ "$TCL" = "script/synth.tcl" ]; then
     printf '# KH=%s\n' "$KH"
     printf '# KV=%s\n' "$KV"
 fi
-"$VIVADO" -nojournal -nolog -mode batch -source "../$TCL" 2>&1
+"$VIVADO/bin/vivado" -nojournal -nolog -mode batch -source "../$TCL" 2>&1
 ) | tee "$LOG" | "$MY/log_highlight.sh"
 trap - EXIT

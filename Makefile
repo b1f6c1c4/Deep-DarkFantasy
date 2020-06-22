@@ -1,5 +1,5 @@
-VIVADO?=vivado
-XSCT?=xsct
+VIVADO?=/opt/xilinx/Vivado/2018.2
+SDK?=/opt/xilinx/SDK/2018.2
 BOOTGEN?=bootgen
 DESIGN=$(wildcard design/*.v)
 CONSTR=$(wildcard constr/*.xdc)
@@ -57,7 +57,7 @@ build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf: script/fsbl-sdk.tcl build/system.hdf
 	./script/launch-sdk.sh $<
 
 build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/output.bit
-	$(BOOTGEN) -arch zynq -image $< -w -o build/BOOT.bin
+	$(SDK)/bin/bootgen -arch zynq -image $< -w -o build/BOOT.bin
 
 clean:
 	rm -rf build/
