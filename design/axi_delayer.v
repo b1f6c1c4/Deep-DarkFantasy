@@ -77,7 +77,6 @@ module axi_delayer #(
          rbuff <= 0;
       end else if (vs_rise) begin
          rbuffed <= 0;
-         rbuff <= 0;
       end else if (m_axi_rvalid && m_axi_rready) begin
          rbuffed <= 1;
          rbuff <= m_axi_rdata;
@@ -91,7 +90,7 @@ module axi_delayer #(
    repacker #(
       .IN (8),
       .OUT (3),
-      .BUFF (48)
+      .BUFF (32)
    ) i_rpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
@@ -112,7 +111,7 @@ module axi_delayer #(
       .clk_i (clk_i),
       .rst_ni (rst_ni),
       .srst_i (vs_rise),
-      .in_incr_i (rfval && rfrdy),
+      .in_val_i (rfval),
       .in_data_i (rfdata),
       .in_rdy_o (rfrdy),
       .out_incr_i (de_i),
@@ -165,7 +164,7 @@ module axi_delayer #(
    repacker #(
       .IN (3),
       .OUT (8),
-      .BUFF (11)
+      .BUFF (32)
    ) i_wpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
@@ -193,7 +192,7 @@ module axi_delayer #(
       .in_data_i (wd),
       .out_val_o (fifo_valid),
       .out_data_o (wd2),
-      .out_incr_i (wde2) // m_axi_wvalid && m_axi_wready)
+      .out_incr_i (wde2)
    );
 
    reg awval, wemit;
@@ -237,7 +236,6 @@ module axi_delayer #(
          awval <= 0;
          wemit <= 0;
          wcnt <= 0;
-         wbuff <= 0;
       end else if (awval && m_axi_awready) begin
          awval <= 0;
          wcnt <= 0;
@@ -249,6 +247,7 @@ module axi_delayer #(
          awval <= 1;
          wemit <= 1;
          wcnt <= 0;
+         wbuff <= wd2;
       end else if (wemit && m_axi_wready && m_axi_wlast) begin
          wemit <= 0;
          wcnt <= 0;
