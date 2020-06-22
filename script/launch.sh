@@ -31,6 +31,9 @@ elif [ "$TCL" = "script/synth.tcl" ]; then
    done
    LOG="${SCR%.*}.log"
    export IP_NAMES
+elif [ "$TCL" = "script/fsbl.tcl" ]; then
+   mkdir -p "build/fsbl/"
+   LOG="${SCR%.*}.log"
 else
    LOG="${SCR%.*}.log"
 fi

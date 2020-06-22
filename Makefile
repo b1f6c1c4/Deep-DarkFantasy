@@ -47,7 +47,7 @@ build/post_route.dcp: script/route.tcl build/post_place.dcp
 build/output.bit: script/bitstream.tcl build/post_route.dcp
 	./script/launch.sh $<
 
-build/system.hdf: script/fsbl-vivado.tcl fsbl/ps.bd
+build/system.hdf: script/fsbl.tcl
 	./script/launch.sh $<
 
 build/BOOT.bin: script/fsbl-sdk.tcl build/system.hdf
