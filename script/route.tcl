@@ -1,4 +1,4 @@
-set_param general.maxThreads 32
+set_param general.maxThreads 8
 
 open_checkpoint post_place.dcp
 

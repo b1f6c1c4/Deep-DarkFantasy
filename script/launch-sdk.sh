@@ -3,7 +3,6 @@
 set -eo pipefail
 
 MY="$(realpath "$(dirname "$0")")"
-[ -z "$XSCT" ] && XSCT=xsct
 
 TCL="$1"
 shift
@@ -19,5 +18,5 @@ finish() {
 }
 trap finish EXIT
 
-"$XSCT" "../../../$TCL" 2>&1 | tee "../../$LOG"
+"$SDK/bin/xsct" "../../../$TCL" 2>&1 | tee "../../$LOG"
 trap - EXIT
