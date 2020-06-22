@@ -6,8 +6,3 @@ if {[llength [get_debug_cores]] > 0} {
 } else {
     file delete output.ltx
 }
-
-# if {[llength [info commands write_hwdef]] > 0} {
-#    write_hwdef -force output.hdf
-#    write_sysdef -hwdef output.hdf -bitfile output.bit -force system.hdf
-# }
