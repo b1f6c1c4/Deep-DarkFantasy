@@ -1,13 +1,13 @@
 module rfifo #(
-   parameter WLEN = 8,
-   parameter DEPTH = 8,
-   parameter BURST_LEN = 16
+   parameter WLEN = 1,
+   parameter DEPTH = 1,
+   parameter BURST_LEN = 1
 ) (
    input clk_i,
    input rst_ni,
    input srst_i,
 
-   input in_incr_i,
+   input in_val_i,
    input [DEPTH-1:0] in_data_i,
    output reg in_rdy_o,
 
@@ -27,17 +27,17 @@ module rfifo #(
          wptr <= 0;
          rptr <= 0;
       end else begin
-         if (in_incr_i) begin
+         if (in_val_i && in_rdy_o) begin
             wptr <= wptr + 1;
          end
-         if (out_incr_i) begin
+         if (out_incr_i && (wptr != rptr)) begin
             rptr <= rptr + 1;
          end
       end
    end
 
    always @(posedge clk_i) begin
-      if (in_incr_i) begin
+      if (in_val_i && in_rdy_o) begin
          mem[wptr] <= in_data_i;
       end
    end
@@ -108,9 +108,9 @@ module wfifo #(
       end else if (srst_i) begin
          out_val_o = 0;
       end else if (wptr < rptr) begin
-         out_val_o = rptr - wptr < LEN - BURST_LEN;
+         out_val_o = rptr - wptr <= LEN - BURST_LEN;
       end else begin
-         out_val_o = wptr - rptr > BURST_LEN;
+         out_val_o = wptr - rptr >= BURST_LEN;
       end
    end
 

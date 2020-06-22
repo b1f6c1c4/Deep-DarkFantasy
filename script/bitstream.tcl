@@ -7,9 +7,7 @@ if {[llength [get_debug_cores]] > 0} {
     file delete output.ltx
 }
 
-if {[llength [info commands write_hw_platform]] > 0} {
-   write_hw_platform -force -include_bit output.xsa
-} else {
-   write_hwdef -force output.hdf
-   write_sysdef -force system.hdf
-}
+# if {[llength [info commands write_hwdef]] > 0} {
+#    write_hwdef -force output.hdf
+#    write_sysdef -hwdef output.hdf -bitfile output.bit -force system.hdf
+# }
