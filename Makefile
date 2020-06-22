@@ -17,12 +17,12 @@ export FREQ
 export KH
 export KV
 
+image: build/BOOT.bin
+
 build: build/output.bit
 
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
-
-image: build/BOOT.bin
 
 define IP_TEMPLATE
 
@@ -62,4 +62,4 @@ build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/
 clean:
 	rm -rf build/
 
-.PHONY: program build clean image
+.PHONY: image build program clean

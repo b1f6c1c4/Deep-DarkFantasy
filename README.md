@@ -15,61 +15,42 @@ By putting an FPGA between your video card and monitor.
 ## Prerequisite
 
 - You need a video card and a monitor that supports HDMI.
-- You need an FPGA develop board with (at least) one HDMI input, one HDMI output, four buttons and four LEDs.
-    - We officially support Alinx AX7Z100, which is based on Xilinx Zynq-7100, ADV7511, and SIL9013.
-- You need some software (with proper licenses, if needed) to program your device with *Deep:* Dark-Fantasy.
-    - We officially support Xilinx Vivado, version 2018.2.
+- You need an FPGA develop board. We only officially support [Digilent Zybo Z7-20](https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/).
+- You need an SD card with at least 8MiB of free space.
 
 ## TL;DR
 
-If you are using AX7Z100 and Xilinx Vivado, you can follow these step get *Deep:* Dark-Fantasy running on your FPGA.
+You can follow these steps get *Deep:* Dark-Fantasy running:
 
-1. Download our pre-built bitstream file (`output.bit`) from [here](https://github.com/b1f6c1c4/Deep-DarkFantasy/releases/latest/).
-1. Launch Xilinx Vivado.
-1. (See the Gif below) Click `Tasks` / `Open Hardware Manager`.
-1. Click the `Auto Connect` button in the Hardware panel.
-1. Select the bitstream file. Leave the Debug probes file empty.
-1. Click `Program`.
-
-    ![Screenshot for using Xilinx Vivado to program an FPGA.](vivado.gif)
-
+1. Get a [Zybo Z7-20](https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/) if you don't have one.
+1. Get an SD card, format its first partition as FAT32.
+1. Download our pre-built boot image file (`BOOT.bin`) from [here](https://github.com/b1f6c1c4/Deep-DarkFantasy/releases/latest/).
+1. Put the downloaded image file (`BOOT.bin`) into the SD card. Do *NOT* modify its name.
 1. Use a power adapter to supply the FPGA develop board.
-1. Use a JTAG debugger connect FPGA develop board to your develop computer (where vivado exists).
-1. Use an HDMI Cable connect your video source (video card / mother board video output) to the HDMI *IN* port of the board.
-1. Use another HDMI Cable connect your video destination (monitor) to the HDMI *OUT* port of the board.
+1. Use an HDMI Cable connect your video source (video card / mother board video output) to the HDMI *RX* port of the board.
+1. Use another HDMI Cable connect your video destination (monitor) to the HDMI *TX* port of the board.
 1. Power on the board.
+1. There are four switches on the board. The best settings for *Deep:* Dark-Fantasy should be **all switches turned off** (away form the LEDs means off).
 
-    ![System connection diagram.](connection.jpg)
-
-1. There are four LEDs (besides the PWR indicator) on the board:
-
-    | PCB Symbol | LED1 | LED2 | LED3 | LED4 |
+    | PCB Symbol | SW3 | SW2 | SW1 | SW0 |
     | ---------- | ---- | ---- | ---- | ---- |
-    | Default | On | Off | Off | Off |
-    | Indication | Block-based Fantasy | Line-based Fantasy | Frame-based Fantasy | Light-Fantasy |
-    | Description | Pixels are grouped into `KH`-by-`KV` blocks. | Effectively set `KH` to infinity. | Effectively set `KH` and `KV` both to infinity. | Invert each pixel, becoming light mode. |
-
-1. There are five buttons on the board:
-
-    | PCB Symbol | RESET | KEY1 | KEY2 | KEY3 | KEY4 |
-    | ---------- | ----- | ---- | ---- | ---- | ---- |
-    | Function | System Reset | Fantasy Reset | Switch Fantasy | Invert Fantasy | No Fantasy |
-    | Press or Hold | Press | Press | Press | Press | Hold Down |
-    | Description | Remove the program from the device. | Switch to the default mode (Block-based Dark-Fantasy). | Switch between Block-based, Line-based, Frame-based, and Non-Fantasy mode. | Switch between Dark-Fantasy and Light-Fantasy. | When held down, temporarily show the original image. |
+    | Function | Freeze Image | Disable Buffering | Plain Invert | Plain Original |
+    | Description | Turn off buffer refresh, so the image is frozen. | Turn off frame buffering, will reduce the latency but may incur flashing image. | Invert every pixels, not just bright ones. | Don't invert any pixels, even if bright ones. |
 
 ## Build *Deep:* Dark-Fantasy from source code
 
 **If the default settings don't work for you for some reason, you should try build the project from source code.**
 
-Note: You need `make`, `bash`, and `awk` to generate the bitstream file.
+Note: You need Xilinx Vivado (2018.2), `make`, `bash`, and `awk` to generate the bitstream file. Futhermore, you need Xilinx SDK (2018.2), `make`, `bash` to generate the bootable image.
 
 ### Step 1: Get the source code
 
 You need to (fork and) clone the repo first:
 ```bash
 git clone --depth=1 https://github.com/b1f6c1c4/Deep-DarkFantasy.git
+git submodule update --init --recursive
 # Or, use git-get:
-# git get b1f6c1c4/Deep-DarkFantasy
+# git gets b1f6c1c4/Deep-DarkFantasy
 ```
 
 In the file `config` you can find the following parameters:
@@ -120,10 +101,7 @@ The first way is usually easier, but here are are explaining the second way.
 You can modify the two parameter `KH` and `KV`.
 It is used to specify the size of blocks - the smaller blocks are, the finer granularity Dark-Fantasy effect is achieved.
 However, if the blocks are too small, texts will become illegible for read.
-Furthermore, since the circuit area scales at `O(H_TOTAL*KV+H_TOTAL/KH)`,
-a configuration with large `KV` or very small `KH` may be too big for your FPGA.
-In that case you have to reduce `KV`, increase `KH`.
-Alternatively, you can reduce display resolution and reduce `H_TOTAL` correspondingly.
+Furthermore, *Deep:* Dark-Fantasy may not work as desired with very small (<5) `KH` and/or `KV`.
 
 ### Step 4: Build the project
 
@@ -134,23 +112,10 @@ Multicore won't help.
 # Specify your Xilinx SDK installation
 export VIVODO=/opt/xilinx/Vivado/2018.2
 export SDK=/opt/xilinx/SDK/2018.2
-# Perform synthsizing, implementation, and bitstream creation.
+# Perform synthsizing, implementation, bitstream creation, boot image creation.
 # This may take a while, so be patient
-make
+make -j8
 ```
 
-A bonus for cloning the repo is that you don't even need to launch Vivado to program your device:
-You can just do this:
-
-```bash
-make program
-```
-
-And your FPGA is ready to go.
-
-## Limitation
-
-- It does not fully support `-Hsync` nor `-Vsync`.
-- For large `KH` and small `KV`, it consumes too much FPGA resource.
-- You need to re-program the device every time after a power cycle.
+You should be able to find `BOOT.bin` in the `build` folder.
 
