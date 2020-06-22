@@ -1,3 +1,0 @@
-[submodule "vivado-library"]
-	path = vivado-library
-	url = https://github.com/Digilent/vivado-library.git

@@ -1,2 +1,2 @@
-design/ip/**/* linguist-vendored
+vivado-library/**/* linguist-vendored
 ip/* linguist-vendored
