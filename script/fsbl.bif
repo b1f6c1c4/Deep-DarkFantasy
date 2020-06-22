@@ -1,0 +1,6 @@
+//arch = zynq; split = false; format = BIN
+the_ROM_image:
+{
+	[bootloader]./build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf
+	./build/output.bit
+}
