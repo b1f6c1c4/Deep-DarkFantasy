@@ -88,7 +88,10 @@ module fantasy #(
    assign led_o[2] = vin_clk_c[26];
 
    // Output mix
-   smoother i_smoother (
+   smoother #(
+      .HBLKS (HBLKS),
+      .VBLKS (VBLKS)
+   ) i_smoother (
       .clk_i (vin_clk_i),
       .rst_ni (rst_ni),
       .dl_i (sw_i[1]),
@@ -103,9 +106,9 @@ module fantasy #(
       .vt_cur_i (vt_cur),
       .blk_i (blk_x),
 
-      .vout_vs_i (vout_vs_i),
-      .vout_hs_i (vout_hs_i),
-      .vout_de_i (vout_de_i),
+      .vout_vs_o (vout_vs_o),
+      .vout_hs_o (vout_hs_o),
+      .vout_de_o (vout_de_o),
       .vout_data_o (vout_data_o)
    );
 
