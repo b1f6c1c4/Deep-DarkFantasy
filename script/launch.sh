@@ -58,6 +58,8 @@ elif [ "$TCL" = "script/synth.tcl" ]; then
     printf '# FREQ=%s\n' "$FREQ"
     printf '# KH=%s\n' "$KH"
     printf '# KV=%s\n' "$KV"
+    printf '# SMOOTH_W=%s\n' "$SMOOTH_W"
+    printf '# SMOOTH_T=%s\n' "$SMOOTH_T"
 fi
 "$VIVADO/bin/vivado" -nojournal -nolog -mode batch -source "../$TCL" 2>&1
 ) | tee "$LOG" | "$MY/log_highlight.sh"

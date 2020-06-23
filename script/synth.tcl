@@ -20,7 +20,9 @@ synth_design -top top \
     -generic H_TOTAL=$::env(H_TOTAL) \
     -generic V_HEIGHT=$::env(V_HEIGHT) \
     -generic KH=$::env(KH) \
-    -generic KV=$::env(KV)
+    -generic KV=$::env(KV) \
+    -generic SMOOTH_W=$::env(SMOOTH_W) \
+    -generic SMOOTH_T=$::env(SMOOTH_T)
 write_checkpoint -force post_synth.dcp
 report_timing_summary -file report/timing_syn.rpt
 report_utilization -file report/util_syn.rpt

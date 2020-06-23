@@ -26,6 +26,7 @@ You can follow these steps get *Deep:* Dark-Fantasy running:
 1. Get an SD card, format its first partition as FAT32.
 1. Download our pre-built boot image file (`BOOT.bin`) from [here](https://github.com/b1f6c1c4/Deep-DarkFantasy/releases/latest/).
 1. Put the downloaded image file (`BOOT.bin`) into the SD card. Do *NOT* modify its name.
+1. On the Zybo Z7-20 board, locate jumper `J4` and set it to `SD`. See "microSD Boot Mode" in the [Reference Manual](https://reference.digilentinc.com/_media/reference/programmable-logic/zybo-z7/zybo-z7_rm.pdf) (page 13) for help.
 1. Use a power adapter to supply the FPGA develop board.
 1. Use an HDMI Cable connect your video source (video card / mother board video output) to the HDMI *RX* port of the board.
 1. Use another HDMI Cable connect your video destination (monitor) to the HDMI *TX* port of the board.
@@ -63,8 +64,10 @@ V_HEIGHT=1080
 FREQ=148.50
 
 # Dark-Fantasy parameters
-KH=30
-KV=30
+KH=30 # Block width (px)
+KV=30 # Block height (px)
+SMOOTH_W=6 # Smoothing width, log of 2
+SMOOTH_T=1400 # Smoothing time (ms)
 ```
 
 ### Step 2: Configure the video parameters
@@ -103,7 +106,13 @@ It is used to specify the size of blocks - the smaller blocks are, the finer gra
 However, if the blocks are too small, texts will become illegible for read.
 Furthermore, *Deep:* Dark-Fantasy may not work as desired with very small (<5) `KH` and/or `KV`.
 
-### Step 4: Build the project
+### Step 4: Configure the smoothing parameters
+
+- `SMOOTH_W` specifies the width of the smoothing edge when toggling the switches.
+Note that this value is the base-2 logarithmic of the actual width.
+- `SMOOTH_T` specifies the overall time of transition (in milliseconds).
+
+### Step 5: Build the project
 
 The project takes a while to build - usually several minutes to half an hour.
 Multicore won't help.
@@ -118,4 +127,6 @@ make -j8
 ```
 
 You should be able to find `BOOT.bin` in the `build` folder.
+Put it into a FAT32-formatted SD card and put it on your FPGA board.
+Don't forget to configure the boot mode.
 

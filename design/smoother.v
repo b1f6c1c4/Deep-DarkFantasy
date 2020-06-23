@@ -1,6 +1,8 @@
 module smoother #(
    parameter HBLKS = 10,
-   parameter VBLKS = 10
+   parameter VBLKS = 10,
+   parameter SMOOTH_W = 6,
+   parameter SMOOTH_T = 1400
 ) (
    input clk_i,
    input rst_ni,
@@ -21,9 +23,9 @@ module smoother #(
    output vout_de_o,
    output [23:0] vout_data_o
 );
-   localparam SW_DELAY = 125 * 148500;
-   localparam FANTASY = 1400 * 148500;
-   localparam FAN_W = 6;
+   localparam SW_DELAY = SMOOTH_T * 1485 * 5;
+   localparam FANTASY = SMOOTH_T * 1485 * 95;
+   localparam FAN_W = SMOOTH_W;
    localparam FAN_WIDTH = 2**FAN_W / 2;
    localparam PHASE = (HBLKS / 2 + VBLKS / 2 + 2 * FAN_WIDTH) * 256;
    localparam FAN_PHASE_DIV = FANTASY / PHASE;

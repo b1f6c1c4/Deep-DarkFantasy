@@ -16,6 +16,8 @@ export V_HEIGHT
 export FREQ
 export KH
 export KV
+export SMOOTH_W
+export SMOOTH_T
 
 image: build/BOOT.bin
 

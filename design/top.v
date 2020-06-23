@@ -4,7 +4,9 @@ module top #(
    parameter H_TOTAL  = 2200,
    parameter V_HEIGHT = 1080,
    parameter KH = 30,
-   parameter KV = 30
+   parameter KV = 30,
+   parameter SMOOTH_W = 6,
+   parameter SMOOTH_T = 1400
 ) (
    input clk_i,
 
@@ -179,7 +181,9 @@ module top #(
       .H_TOTAL (H_TOTAL),
       .V_HEIGHT (V_HEIGHT),
       .KH (KH),
-      .KV (KV)
+      .KV (KV),
+      .SMOOTH_W (SMOOTH_W),
+      .SMOOTH_T (SMOOTH_T)
    ) i_dark (
       .clk_i (vin_clk),
       .rst_ni (rst_n),

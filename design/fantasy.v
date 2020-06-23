@@ -4,7 +4,9 @@ module fantasy #(
    parameter H_TOTAL  = 2200,
    parameter V_HEIGHT = 1080,
    parameter KH = 30,
-   parameter KV = 30
+   parameter KV = 30,
+   parameter SMOOTH_W = 6,
+   parameter SMOOTH_T = 1400
 ) (
    input rst_ni,
    input [3:0] sw_i,
@@ -90,7 +92,9 @@ module fantasy #(
    // Output mix
    smoother #(
       .HBLKS (HBLKS),
-      .VBLKS (VBLKS)
+      .VBLKS (VBLKS),
+      .SMOOTH_W (SMOOTH_W),
+      .SMOOTH_T (SMOOTH_T)
    ) i_smoother (
       .clk_i (vin_clk_i),
       .rst_ni (rst_ni),
