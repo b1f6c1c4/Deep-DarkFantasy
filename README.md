@@ -15,19 +15,25 @@ By putting an FPGA between your video card and monitor.
 ## Prerequisite
 
 - You need a video card and a monitor that supports HDMI.
-- You need an FPGA develop board. We only officially support [Digilent Zybo Z7-20](https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/).
-- You need an SD card with at least 8MiB of free space.
+- You need an FPGA develop board. For v2.0 we only support [Digilent Zybo Z7-20](https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/).
+- You need a microSD card with at least 8MiB of free space.
+
+Note: For [v1.0](https://github.com/b1f6c1c4/Deep-DarkFantasy/tree/v1.0)
+we supported [AX7Z100](http://www.alinx.com.cn/index.php/default/content/124.html)
+but that was discontinued.
 
 ## TL;DR
 
 You can follow these steps get *Deep:* Dark-Fantasy running:
 
 1. Get a [Zybo Z7-20](https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/) if you don't have one.
-1. Get an SD card, format its first partition as FAT32.
+1. Get a microSD card, format its first partition as FAT32.
 1. Download our pre-built boot image file (`BOOT.bin`) from [here](https://github.com/b1f6c1c4/Deep-DarkFantasy/releases/latest/).
-1. Put the downloaded image file (`BOOT.bin`) into the SD card. Do *NOT* modify its name.
+1. Put the downloaded image file (`BOOT.bin`) into the microSD card. Do *NOT* modify its name.
+1. Put the microSD card into the `SD MICRO` slot on the FPGA develop board.
 1. On the Zybo Z7-20 board, locate jumper `J4` and set it to `SD`. See "microSD Boot Mode" in the [Reference Manual](https://reference.digilentinc.com/_media/reference/programmable-logic/zybo-z7/zybo-z7_rm.pdf) (page 13) for help.
 1. Use a power adapter to supply the FPGA develop board.
+1. Locate jumper `JP6` and set it to `WALL`. See "Power Supplies" in the [Reference Manual](https://reference.digilentinc.com/_media/reference/programmable-logic/zybo-z7/zybo-z7_rm.pdf) (page 9) for help.
 1. Use an HDMI Cable connect your video source (video card / mother board video output) to the HDMI *RX* port of the board.
 1. Use another HDMI Cable connect your video destination (monitor) to the HDMI *TX* port of the board.
 1. Power on the board.
