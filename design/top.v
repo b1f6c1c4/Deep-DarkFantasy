@@ -108,6 +108,7 @@ module top #(
 
    // HDMI out
 
+   wire vout_hs, vout_vs, vout_de;
    wire [23:0] vout_data;
    rgb2dvi_1080p i_rgb2dvi (
       .PixelClk(vin_clk),
@@ -119,9 +120,9 @@ module top #(
       .TMDS_Data_p(hdmi_out_data_p),
 
       .vid_pData(vout_data),
-      .vid_pHSync(vin_hs),
-      .vid_pVDE(vin_de),
-      .vid_pVSync(vin_vs)
+      .vid_pHSync(vout_hs),
+      .vid_pVDE(vout_de),
+      .vid_pVSync(vout_vs)
    );
 
    // Process
@@ -193,6 +194,10 @@ module top #(
       .hs_i (vin_hs),
       .de_i (vin_de),
       .data_i (vin_data),
+
+      .vs_o (vout_vs),
+      .hs_o (vout_hs),
+      .de_o (vout_de),
       .data_o (vout_data),
 
       .M_AXI_ARREADY (AXI_ARREADY),

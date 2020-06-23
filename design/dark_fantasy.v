@@ -20,6 +20,10 @@ module dark_fantasy #(
    input hs_i,
    input de_i,
    input [23:0] data_i,
+
+   output vs_o,
+   output hs_o,
+   output de_o,
    output [23:0] data_o,
 
    input M_AXI_ARREADY,
@@ -85,7 +89,11 @@ module dark_fantasy #(
       .vin_vs_i (vs_i),
       .vin_de_i (de_i),
       .vin_data_i (data_i),
+
       .vout_data_i (mid_data),
+      .vout_hs_o (hs_o),
+      .vout_vs_o (vs_o),
+      .vout_de_o (de_o),
       .vout_data_o (data_o)
    );
 

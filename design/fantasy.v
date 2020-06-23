@@ -18,7 +18,11 @@ module fantasy #(
    input vin_vs_i,
    input vin_de_i,
    input [23:0] vin_data_i,
+
    input [23:0] vout_data_i,
+   output vout_hs_o,
+   output vout_vs_o,
+   output vout_de_o,
    output [23:0] vout_data_o
 );
 
@@ -33,6 +37,8 @@ module fantasy #(
 
    // Cursors
    wire de_fall, h_save, v_save;
+   wire [$clog2(HBLKS)-1:0] ht_cur;
+   wire [$clog2(VBLKS)-1:0] vt_cur;
    cursor #(
       .HP (HP),
       .VP (VP),
@@ -50,8 +56,8 @@ module fantasy #(
       .de_fall_o (de_fall),
       .h_save_o (h_save),
       .v_save_o (v_save),
-      .ht_cur_o (),
-      .vt_cur_o ()
+      .ht_cur_o (ht_cur),
+      .vt_cur_o (vt_cur)
    );
 
    // Blk mode
@@ -70,21 +76,7 @@ module fantasy #(
       .rx_o (blk_x)
    );
 
-   // Output selection
-   reg px_inv;
-   always @(*) begin
-      px_inv = 0;
-      if (sw_i[1:0] == 2'b00) begin
-         px_inv = blk_x;
-      end else if (sw_i[1:0] == 2'b01) begin
-         px_inv = 0;
-      end else if (sw_i[1:0] == 2'b10) begin
-         px_inv = 1;
-      end else if (sw_i[1:0] == 2'b11) begin
-         px_inv = ~blk_x;
-      end
-   end
-   assign led_o[0] = px_inv;
+   assign led_o[0] = blk_x;
    assign led_o[3] = vout_hpd_i;
 
    // Clock monitor
@@ -96,7 +88,27 @@ module fantasy #(
    assign led_o[2] = vin_clk_c[26];
 
    // Output mix
-   assign vout_data_o = {24{px_inv}} ^ (sw_i[2] ? vin_data_i : vout_data_i);
+   smoother i_smoother (
+      .clk_i (vin_clk_i),
+      .rst_ni (rst_ni),
+      .dl_i (sw_i[1]),
+      .ld_i (sw_i[0]),
+
+      .vin_vs_i (vin_vs_i),
+      .vin_hs_i (vin_hs_i),
+      .vin_de_i (vin_de_i),
+      .vin_data_i (sw_i[2] ? vin_data_i : vout_data_i),
+
+      .ht_cur_i (ht_cur),
+      .vt_cur_i (vt_cur),
+      .blk_i (blk_x),
+
+      .vout_vs_i (vout_vs_i),
+      .vout_hs_i (vout_hs_i),
+      .vout_de_i (vout_de_i),
+      .vout_data_o (vout_data_o)
+   );
+
    assign vin_hpd_o = vout_hpd_i || sw_i[3];
 
 endmodule
