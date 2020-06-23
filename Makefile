@@ -35,6 +35,13 @@ endef
 
 $(foreach x,$(XCI),$(eval $(call IP_TEMPLATE,$(x))))
 
+vivado-library/dvi2rgb/src/dgl_1080p_cea.data: design/edid.txt
+	mkdir -p build/
+	awk '{ if (a) { sub(/ \|/,":"); print; } } /--/ { a = 1; }' $< \
+		| xxd -r | xxd -b -c 1 | awk '{ print $$2; }' >$@
+
+build/ip/dvi2rgb_1080p/dvi2rgb_1080p.dcp: vivado-library/dvi2rgb/src/dgl_1080p_cea.data
+
 build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) config
 	./script/launch.sh $< $(XCI)
 

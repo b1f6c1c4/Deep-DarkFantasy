@@ -113,7 +113,7 @@ Multicore won't help.
 export VIVODO=/opt/xilinx/Vivado/2018.2
 export SDK=/opt/xilinx/SDK/2018.2
 # Perform synthsizing, implementation, bitstream creation, boot image creation.
-# This may take a while, so be patient
+# This may take a while (15~25min), so be patient
 make -j8
 ```
 
