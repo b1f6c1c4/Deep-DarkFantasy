@@ -12,6 +12,7 @@ module top #(
 
    input [3:0] sw_i,
    input [3:0] button_i,
+   input [2:0] rot_ni,
 
    output [3:0] led_o,
 
@@ -60,7 +61,22 @@ module top #(
       .locked(rst_ref_n)
    );
 
-   wire rst_n = ~button_i[0];
+   wire rst_n = ~button_i[3];
+
+   wire [1:0] fantasy_mode;
+   rotary #(
+      .N (4),
+      .SAT (1),
+      .INIT (4),
+      .T (3)
+   ) i_rotary (
+      .clk_i (clk_i),
+      .rst_ni (rst_n),
+      .rot_ni (rot_ni),
+      .counter_o (fantasy_mode)
+   );
+
+   assign hdmi_in_hpd_o = hdmi_out_hpd_i || sw_i[3];
 
    // HDMI in
 
@@ -107,6 +123,19 @@ module top #(
       .vid_pVSync(vin_vs),
       .vid_pVDE(vin_de)
    );
+
+   // LED monitor
+
+   reg [31:0] vin_clk_c, vout_clk_c;
+   always @(posedge vin_clk) begin
+      vin_clk_c <= vin_clk_c + 1;
+   end
+
+   wire blk_y;
+   assign led_o[0] = blk_y;
+   assign led_o[1] = vin_clk_c[26];
+   assign led_o[2] = vin_clk_c[26];
+   assign led_o[3] = hdmi_out_hpd_i;
 
    // HDMI out
 
@@ -175,7 +204,9 @@ module top #(
    wire [63:0] AXI_WDATA;
    wire [7:0] AXI_WSTRB;
 
-   dark_fantasy #(
+   wire [23:0] mid_data;
+
+   fantasy #(
       .H_WIDTH (H_WIDTH),
       .H_START (H_START),
       .H_TOTAL (H_TOTAL),
@@ -184,65 +215,77 @@ module top #(
       .KV (KV),
       .SMOOTH_W (SMOOTH_W),
       .SMOOTH_T (SMOOTH_T)
-   ) i_dark (
+   ) i_fantasy (
+      .rst_ni (rst_n),
+      .mode_i (fantasy_mode),
+
+      .vin_clk_i (vin_clk),
+      .vin_hs_i (vin_hs),
+      .vin_vs_i (vin_vs),
+      .vin_de_i (vin_de),
+      .vin_data_i (vin_data),
+
+      .vout_data_i (sw_i[2] ? vin_data : mid_data),
+      .vout_hs_o (vout_hs),
+      .vout_vs_o (vout_vs),
+      .vout_de_o (vout_de),
+      .vout_data_o (vout_data),
+
+      .blk_y_o (blk_y)
+   );
+
+   axi_delayer #(
+      .H_WIDTH (H_WIDTH),
+      .V_HEIGHT (V_HEIGHT)
+   ) i_axi_delayer (
       .clk_i (vin_clk),
       .rst_ni (rst_n),
-
-      .sw_i (sw_i),
-      .led_o (led_o),
-
-      .hdmi_in_hpd_o (hdmi_in_hpd_o),
-      .hdmi_out_hpd_i (hdmi_out_hpd_i),
-
+      .ren_i (~sw_i[2]),
+      .wen_i (~sw_i[3]),
       .vs_i (vin_vs),
-      .hs_i (vin_hs),
       .de_i (vin_de),
       .data_i (vin_data),
+      .data_o (mid_data),
 
-      .vs_o (vout_vs),
-      .hs_o (vout_hs),
-      .de_o (vout_de),
-      .data_o (vout_data),
-
-      .M_AXI_ARREADY (AXI_ARREADY),
-      .M_AXI_AWREADY (AXI_AWREADY),
-      .M_AXI_BVALID (AXI_BVALID),
-      .M_AXI_RLAST (AXI_RLAST),
-      .M_AXI_RVALID (AXI_RVALID),
-      .M_AXI_WREADY (AXI_WREADY),
-      .M_AXI_BRESP (AXI_BRESP),
-      .M_AXI_RRESP (AXI_RRESP),
-      .M_AXI_RDATA (AXI_RDATA),
-      .M_AXI_BID (AXI_BID),
-      .M_AXI_RID (AXI_RID),
-      .M_AXI_ACLK (AXI_ACLK),
-      .M_AXI_ARVALID (AXI_ARVALID),
-      .M_AXI_AWVALID (AXI_AWVALID),
-      .M_AXI_BREADY (AXI_BREADY),
-      .M_AXI_RREADY (AXI_RREADY),
-      .M_AXI_WLAST (AXI_WLAST),
-      .M_AXI_WVALID (AXI_WVALID),
-      .M_AXI_ARBURST (AXI_ARBURST),
-      .M_AXI_ARLOCK (AXI_ARLOCK),
-      .M_AXI_ARSIZE (AXI_ARSIZE),
-      .M_AXI_AWBURST (AXI_AWBURST),
-      .M_AXI_AWLOCK (AXI_AWLOCK),
-      .M_AXI_AWSIZE (AXI_AWSIZE),
-      .M_AXI_ARPROT (AXI_ARPROT),
-      .M_AXI_AWPROT (AXI_AWPROT),
-      .M_AXI_ARADDR (AXI_ARADDR),
-      .M_AXI_AWADDR (AXI_AWADDR),
-      .M_AXI_WDATA (AXI_WDATA),
-      .M_AXI_ARCACHE (AXI_ARCACHE),
-      .M_AXI_ARLEN (AXI_ARLEN),
-      .M_AXI_ARQOS (AXI_ARQOS),
-      .M_AXI_AWCACHE (AXI_AWCACHE),
-      .M_AXI_AWLEN (AXI_AWLEN),
-      .M_AXI_AWQOS (AXI_AWQOS),
-      .M_AXI_WSTRB (AXI_WSTRB),
-      .M_AXI_ARID (AXI_ARID),
-      .M_AXI_AWID (AXI_AWID),
-      .M_AXI_WID (AXI_WID)
+      .m_axi_arready (AXI_ARREADY),
+      .m_axi_awready (AXI_AWREADY),
+      .m_axi_bvalid (AXI_BVALID),
+      .m_axi_rlast (AXI_RLAST),
+      .m_axi_rvalid (AXI_RVALID),
+      .m_axi_wready (AXI_WREADY),
+      .m_axi_bresp (AXI_BRESP),
+      .m_axi_rresp (AXI_RRESP),
+      .m_axi_bid (AXI_BID),
+      .m_axi_rid (AXI_RID),
+      .m_axi_rdata (AXI_RDATA),
+      .m_axi_aclk (AXI_ACLK),
+      .m_axi_arvalid (AXI_ARVALID),
+      .m_axi_awvalid (AXI_AWVALID),
+      .m_axi_bready (AXI_BREADY),
+      .m_axi_rready (AXI_RREADY),
+      .m_axi_wlast (AXI_WLAST),
+      .m_axi_wvalid (AXI_WVALID),
+      .m_axi_arburst (AXI_ARBURST),
+      .m_axi_arlock (AXI_ARLOCK),
+      .m_axi_arsize (AXI_ARSIZE),
+      .m_axi_awburst (AXI_AWBURST),
+      .m_axi_awlock (AXI_AWLOCK),
+      .m_axi_awsize (AXI_AWSIZE),
+      .m_axi_arprot (AXI_ARPROT),
+      .m_axi_awprot (AXI_AWPROT),
+      .m_axi_araddr (AXI_ARADDR),
+      .m_axi_awaddr (AXI_AWADDR),
+      .m_axi_arcache (AXI_ARCACHE),
+      .m_axi_arlen (AXI_ARLEN),
+      .m_axi_arqos (AXI_ARQOS),
+      .m_axi_awcache (AXI_AWCACHE),
+      .m_axi_awlen (AXI_AWLEN),
+      .m_axi_awqos (AXI_AWQOS),
+      .m_axi_arid (AXI_ARID),
+      .m_axi_awid (AXI_AWID),
+      .m_axi_wid (AXI_WID),
+      .m_axi_wdata (AXI_WDATA),
+      .m_axi_wstrb (AXI_WSTRB)
    );
 
    processing_system7_0 i_ps (

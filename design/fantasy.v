@@ -9,11 +9,7 @@ module fantasy #(
    parameter SMOOTH_T = 1400
 ) (
    input rst_ni,
-   input [3:0] sw_i,
-   output [3:0] led_o,
-
-   output vin_hpd_o,
-   input vout_hpd_i,
+   input [1:0] mode_i,
 
    input vin_clk_i,
    input vin_hs_i,
@@ -25,7 +21,9 @@ module fantasy #(
    output vout_hs_o,
    output vout_vs_o,
    output vout_de_o,
-   output [23:0] vout_data_o
+   output [23:0] vout_data_o,
+
+   output blk_y_o
 );
 
    localparam HP = H_WIDTH;
@@ -63,7 +61,6 @@ module fantasy #(
    );
 
    // Blk mode
-   wire blk_x;
    blk_buffer #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS),
@@ -75,19 +72,8 @@ module fantasy #(
       .v_save_i (v_save),
       .de_i (vin_de_i),
       .wd_i (vin_data_i),
-      .rx_o (blk_x)
+      .rx_o (blk_y_o)
    );
-
-   assign led_o[0] = blk_x;
-   assign led_o[3] = vout_hpd_i;
-
-   // Clock monitor
-   reg [31:0] vin_clk_c, vout_clk_c;
-   always @(posedge vin_clk_i) begin
-      vin_clk_c <= vin_clk_c + 1;
-   end
-   assign led_o[1] = vin_clk_c[26];
-   assign led_o[2] = vin_clk_c[26];
 
    // Output mix
    smoother #(
@@ -98,24 +84,22 @@ module fantasy #(
    ) i_smoother (
       .clk_i (vin_clk_i),
       .rst_ni (rst_ni),
-      .dl_i (sw_i[1]),
-      .ld_i (sw_i[0]),
+      .dl_i (mode_i[1] ^ mode_i[0]),
+      .ld_i (mode_i[0]),
 
       .vin_vs_i (vin_vs_i),
       .vin_hs_i (vin_hs_i),
       .vin_de_i (vin_de_i),
-      .vin_data_i (sw_i[2] ? vin_data_i : vout_data_i),
+      .vin_data_i (vout_data_i),
 
       .ht_cur_i (ht_cur),
       .vt_cur_i (vt_cur),
-      .blk_i (blk_x),
+      .blk_i (blk_y_o),
 
       .vout_vs_o (vout_vs_o),
       .vout_hs_o (vout_hs_o),
       .vout_de_o (vout_de_o),
       .vout_data_o (vout_data_o)
    );
-
-   assign vin_hpd_o = vout_hpd_i || sw_i[3];
 
 endmodule

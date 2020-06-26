@@ -8,9 +8,11 @@ update_ip_catalog
 read_verilog [glob ../design/*.v]
 
 set names [split $::env(IP_NAMES)]
-read_ip $names
-generate_target all [get_ips *]
-synth_ip [get_ips *]
+if {[llength $names] > 0} {
+   read_ip $names
+   generate_target all [get_ips *]
+   synth_ip [get_ips *]
+}
 
 set VIN_FREQ $::env(FREQ)
 read_xdc [glob ../constr/zybo-z7-20.xdc]
