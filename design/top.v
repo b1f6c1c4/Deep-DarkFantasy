@@ -217,7 +217,6 @@ module top #(
    ) i_fantasy (
       .rst_ni (rst_n),
       .mode_i (fantasy_mode),
-      .plain_i (sw_i[0]),
 
       .vin_clk_i (vin_clk),
       .vin_hs_i (vin_hs),

@@ -109,7 +109,7 @@ module blk_buffer #(
    ) i_dsp_1 (
       .A ({22'b0,wd_i[23:16]}),
       .B (18'd109),
-      .C ({{(48-Y_DEPTH){1'b0}},bacc0_Y}), // Unsigned extension desired!
+      .C ({{(48-Y_DEPTH){1'b0}},bacc0_Y}),
       .PCIN (0),
       .PCOUT (p_1),
       .P (),
@@ -256,26 +256,37 @@ module blk_buffer #(
       end
    end
 
+   wire [23:0] ab_5c = bacc0_C;
+   wire [23:0] ab_5l = bacc0_L;
+   wire [47:0] ab_5 = (h_save_i && ~|cls_cnt) ? {ab_5c,ab_5l} : 0;
+   reg [47:0] ab_5_r, ab_5_rr;
+   always @(posedge clk_i) begin
+      ab_5_r <= ab_5;
+      ab_5_rr <= ab_5_r;
+   end
+
    wire [23:0] C_rrr = max_rrr - min_rrr;
    wire [23:0] L_rrr = max_rrr + min_rrr;
    DSP48E1 #(
       .OPMODEREG (1),
+      .AREG (2),
+      .BREG (2),
       .CREG (1),
       .MREG (0),
       .DREG (1), .ADREG (1),
       .USE_MULT ("NONE"),
       .USE_SIMD ("TWO24")
    ) i_dsp_5 (
-      .A (0),
-      .B (0),
+      .A (ab_5_rr[47:18]),
+      .B (ab_5_rr[17:0]),
       .C ({C_rrr,L_rrr}),
       .PCIN (),
       .PCOUT (),
       .P (p_5),
 
-      // h_clear_rrr == 0: X = 0, Y = C, Z = P_r
-      // h_clear_rrr == 1: X = 0, Y = C, Z = 0
-      .OPMODE (h_clear_rrr ? 7'b0001100 : 7'b0101100),
+      // h_clear_rrr == 0: X = A_rr:B_rr, Y = C_r, Z = P_r
+      // h_clear_rrr == 1: X = A_rr:B_rr, Y = C_r, Z = 0
+      .OPMODE (h_clear_rrr ? 7'b0001111 : 7'b0101111),
       .ALUMODE (4'b0000), // P_r <= Z + X + Y + CIN
       .INMODE (5'b00010),
       .CARRYINSEL (3'b000), // CIN = CARRYIN
@@ -304,8 +315,8 @@ module blk_buffer #(
          bt_L <= 0;
       end else if (h_save_rrrrr) begin
          bt_Y <= {p_4s,bt_Y[HBLKS-1:1]};
-         bt_C <= {p_5c,bt_C[HBLKS-1:1]}; // TODO
-         bt_L <= {p_5l,bt_L[HBLKS-1:1]}; // TODO
+         bt_C <= {p_5c,bt_C[HBLKS-1:1]};
+         bt_L <= {p_5l,bt_L[HBLKS-1:1]};
       end
    end
 

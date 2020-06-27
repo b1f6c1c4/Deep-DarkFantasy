@@ -10,7 +10,6 @@ module fantasy #(
 ) (
    input rst_ni,
    input [2:0] mode_i,
-   input plain_i,
 
    input vin_clk_i,
    input vin_hs_i,
@@ -96,42 +95,42 @@ module fantasy #(
    end
 
    reg inv_en_rrr;
-   reg signed [24:0] shift_rrr;
+   reg [29:0] shift_rrr;
    reg [17:0] gain_rrr;
    always @(*) begin
       if (mode_r == 0) begin // Inv
          inv_en_rrr = 1;
          shift_rrr = 0;
-         gain_rrr = 65536;
+         gain_rrr = 32768;
       end else if (mode_r == 1) begin // Inv and dim
          inv_en_rrr = 1;
          shift_rrr = 0;
-         gain_rrr = 43691;
+         gain_rrr = 21845;
       end else if (mode_r == 2) begin // Y-based Inv
          inv_en_rrr = blk_Y_rrr;
          shift_rrr = 0;
-         gain_rrr = 65536;
+         gain_rrr = 32768;
       end else if (mode_r == 3) begin // Inv or dim
          inv_en_rrr = ~blk_C_rrr && blk_Y_rrr;
          shift_rrr = 0;
-         gain_rrr = blk_C_rrr ? 65536 : 32768;
+         gain_rrr = ~blk_C_rrr ? 32768 : 16384;
       end else if (mode_r == 4) begin // Shift and dim
          inv_en_rrr = 0;
          if (px_C_rrr < 89) begin // 0.35
-            shift_rrr = blk_L_rrr ? 25'sd2 * ($signed(px_L_rrr) - 25'sd128) : 25'sd0;
-            gain_rrr = 65536;
+            shift_rrr = blk_L_rrr ? 30'sd2 * $signed($signed(px_L_rrr) - 30'sd128) : 30'sd0;
+            gain_rrr = 32768;
          end else begin
-            shift_rrr = -(px_L_rrr - px_C_rrr / 25'sd2) / 25'sd2;
-            gain_rrr = blk_L_rrr ? 65536 : 43691;
+            shift_rrr = (px_L_rrr - px_C_rrr / 30'sd2) / 30'sd2;
+            gain_rrr = ~blk_L_rrr ? 32768 : 21845;
          end
       end else if (mode_r == 5) begin // Dim
          inv_en_rrr = 0;
          shift_rrr = 0;
-         gain_rrr = 43691;
+         gain_rrr = 21845;
       end else begin // Pass
          inv_en_rrr = 0;
          shift_rrr = 0;
-         gain_rrr = 65536;
+         gain_rrr = 32768;
       end
    end
 
@@ -139,29 +138,29 @@ module fantasy #(
    DSP48E1 #(
       .AREG (1),
       .BREG (1),
-      .CREG (0),
+      .CREG (1),
       .DREG (1),
       .ADREG (0),
-      .MREG (1),
-      .PREG (0),
+      .MREG (0),
+      .PREG (1),
       .USE_DPORT ("TRUE")
    ) i_dsp_r (
-      .A ({22'b0,({8{inv_en_rrr}} ^ wd_rrr[23:16])}),
+      .A (shift_rrr),
       .B (gain_rrr),
       .C (0),
-      .D (shift_rrr),
+      .D ({17'b0,({8{inv_en_rrr}} ^ wd_rrr[23:16])}),
       .PCIN (),
       .PCOUT (),
       .P (p_r),
 
-      .OPMODE (7'b0001111), // XY <= M_r, Z = 0
+      .OPMODE (7'b0000101), // XY <= M, Z = 0
       .ALUMODE (4'b0000), // P_r <= Z + X + Y + CIN
-      .INMODE (5'b00100), // AD = A_r + D_r, M_r <= AD * B_r
+      .INMODE (5'b01100), // AD = D_r - A_r, M = AD * B_r
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (1), .CEM (1), .CEP (1), .CEAD (0),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (1), .CEM (0), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (~rst_ni), .RSTM (0), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (vin_clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
@@ -174,26 +173,26 @@ module fantasy #(
       .CREG (0),
       .DREG (1),
       .ADREG (0),
-      .MREG (1),
-      .PREG (0),
+      .MREG (0),
+      .PREG (1),
       .USE_DPORT ("TRUE")
    ) i_dsp_b (
-      .A ({22'b0,({8{inv_en_rrr}} ^ wd_rrr[15:8])}),
+      .A (shift_rrr),
       .B (gain_rrr),
       .C (0),
-      .D (shift_rrr),
+      .D ({17'b0,({8{inv_en_rrr}} ^ wd_rrr[15:8])}),
       .PCIN (),
       .PCOUT (),
       .P (p_b),
 
-      .OPMODE (7'b0001111), // XY <= M_r, Z = 0
+      .OPMODE (7'b0000101), // XY <= M, Z = 0
       .ALUMODE (4'b0000), // P_r <= Z + X + Y + CIN
-      .INMODE (5'b00100), // AD = A_r + D_r, M_r <= AD * B_r
+      .INMODE (5'b01100), // AD = D_r - A_r, M = AD * B_r
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (1), .CEM (1), .CEP (1), .CEAD (0),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (1), .CEM (0), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (~rst_ni), .RSTM (0), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (vin_clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
@@ -206,26 +205,26 @@ module fantasy #(
       .CREG (0),
       .DREG (1),
       .ADREG (0),
-      .MREG (1),
-      .PREG (0),
+      .MREG (0),
+      .PREG (1),
       .USE_DPORT ("TRUE")
    ) i_dsp_g (
-      .A ({22'b0,({8{inv_en_rrr}} ^ wd_rrr[7:0])}),
+      .A (shift_rrr),
       .B (gain_rrr),
       .C (0),
-      .D (shift_rrr),
+      .D ({17'b0,({8{inv_en_rrr}} ^ wd_rrr[7:0])}),
       .PCIN (),
       .PCOUT (),
       .P (p_g),
 
-      .OPMODE (7'b0001111), // XY <= M_r, Z = 0
+      .OPMODE (7'b0000101), // XY <= M, Z = 0
       .ALUMODE (4'b0000), // P_r <= Z + X + Y + CIN
-      .INMODE (5'b00100), // AD = A_r + D_r, M_r <= AD * B_r
+      .INMODE (5'b01100), // AD = D_r - A_r, M = AD * B_r
       .CARRYINSEL (3'b000), // CIN = CARRYIN
 
-      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (1), .CEM (1), .CEP (1), .CEAD (0),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (0), .CED (1), .CEM (0), .CEP (1), .CEAD (0),
       .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
-      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (~rst_ni), .RSTM (~rst_ni), .RSTP (~rst_ni),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (0), .RSTD (~rst_ni), .RSTM (0), .RSTP (~rst_ni),
       .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
       .CLK (vin_clk_i),
       .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
@@ -245,7 +244,7 @@ module fantasy #(
    assign vout_vs_o = vs_rrrrr;
    assign vout_hs_o = hs_rrrrr;
    assign vout_de_o = de_rrrrr;
-   assign vout_data_o = plain_i ? wd_rrrrr : {p_r[23:16],p_b[23:16],p_g[23:16]};
+   assign vout_data_o = {p_r[22:15],p_b[22:15],p_g[22:15]};
 
    // Output mix
    /* smoother #( */
