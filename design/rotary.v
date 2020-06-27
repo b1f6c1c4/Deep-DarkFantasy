@@ -30,16 +30,18 @@ module rotary #(
             cnt <= 0;
             if (rot_nr == {rot_nrr[0],rot_nrr[T-1:1]}
                && rot_ni == {rot_nr[0],rot_nr[T-1:1]}) begin
-               cnt <= 0;
                rot_nrr <= rot_nr;
-               if (~SAT || counter_o < N-1) begin
+               if (counter_o == N - 1) begin
+                  counter_o <= SAT ? N - 1 : 0;
+               end else begin
                   counter_o <= counter_o + 1;
                end
             end else if (rot_nr == {rot_nrr[T-2:0],rot_nrr[T-1]}
                && rot_ni == {rot_nr[T-2:0],rot_nr[T-1]}) begin
-               cnt <= 0;
                rot_nrr <= rot_nr;
-               if (~SAT || counter_o > 0) begin
+               if (counter_o == 0) begin
+                  counter_o <= SAT ? 0 : N - 1;
+               end else begin
                   counter_o <= counter_o - 1;
                end
             end
@@ -48,13 +50,17 @@ module rotary #(
          end else if (rot_nr == {rot_nrr[0],rot_nrr[T-1:1]}) begin
             cnt <= 0;
             rot_nrr <= rot_nr;
-            if (~SAT || counter_o < N-1) begin
+            if (counter_o == N - 1) begin
+               counter_o <= SAT ? N - 1 : 0;
+            end else begin
                counter_o <= counter_o + 1;
             end
          end else if (rot_nr == {rot_nrr[T-2:0],rot_nrr[T-1]}) begin
             cnt <= 0;
             rot_nrr <= rot_nr;
-            if (~SAT || counter_o > 0) begin
+            if (counter_o == 0) begin
+               counter_o <= SAT ? 0 : N - 1;
+            end else begin
                counter_o <= counter_o - 1;
             end
          end else begin

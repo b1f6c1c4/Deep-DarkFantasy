@@ -63,9 +63,9 @@ module top #(
 
    wire rst_n = ~button_i[3];
 
-   wire [1:0] fantasy_mode;
+   wire [2:0] fantasy_mode;
    rotary #(
-      .N (4),
+      .N (7),
       .SAT (1),
       .INIT (4),
       .T (3)
@@ -126,16 +126,15 @@ module top #(
 
    // LED monitor
 
-   reg [31:0] vin_clk_c, vout_clk_c;
+   reg [31:0] vin_clk_c;
    always @(posedge vin_clk) begin
       vin_clk_c <= vin_clk_c + 1;
    end
 
-   wire blk_y;
-   assign led_o[0] = blk_y;
-   assign led_o[1] = vin_clk_c[26];
-   assign led_o[2] = vin_clk_c[26];
-   assign led_o[3] = hdmi_out_hpd_i;
+   assign led_o[0] = fantasy_mode[0];
+   assign led_o[1] = fantasy_mode[1];
+   assign led_o[2] = fantasy_mode[2];
+   assign led_o[3] = vin_clk_c[26];
 
    // HDMI out
 
@@ -218,6 +217,7 @@ module top #(
    ) i_fantasy (
       .rst_ni (rst_n),
       .mode_i (fantasy_mode),
+      .plain_i (sw_i[0]),
 
       .vin_clk_i (vin_clk),
       .vin_hs_i (vin_hs),
@@ -229,9 +229,7 @@ module top #(
       .vout_hs_o (vout_hs),
       .vout_vs_o (vout_vs),
       .vout_de_o (vout_de),
-      .vout_data_o (vout_data),
-
-      .blk_y_o (blk_y)
+      .vout_data_o (vout_data)
    );
 
    axi_delayer #(

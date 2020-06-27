@@ -15,7 +15,7 @@ if {[llength $names] > 0} {
 }
 
 set VIN_FREQ $::env(FREQ)
-read_xdc [glob ../constr/zybo-z7-20.xdc]
+read_xdc [glob ../constr/*.xdc]
 synth_design -top top \
     -generic H_WIDTH=$::env(H_WIDTH) \
     -generic H_START=$::env(H_START) \

@@ -10,10 +10,21 @@ module blk_buffer #(
    input de_i,
    input [23:0] wd_i,
 
-   output rx_o
+   output [7:0] px_C_rrr_o,
+   output [7:0] px_L_rrr_o,
+
+   output Y_o,
+   output C_o,
+   output L_o
 );
-   localparam DEPTH = $clog2(PXS * 512 * 255 + 1);
-   localparam THRES = PXS * 256 * 255;
+   localparam Y_DEPTH = $clog2(PXS * 512 * 255 + 1);
+   localparam Y_THRES = PXS * 256 * 255;
+   localparam C_DEPTH = $clog2(PXS * 255 + 1);
+   localparam C_THRES = PXS * 89; // 0.35 * 255
+   localparam L_DEPTH = $clog2(PXS * 2 * 255 + 1);
+   localparam L_THRES = PXS * 256;
+
+   // Control
 
    reg h_clear_i, h_clear_r, h_clear_rr, h_clear_rrr;
    reg h_save_r, h_save_rr, h_save_rrr, h_save_rrrr, h_save_rrrrr;
@@ -53,17 +64,41 @@ module blk_buffer #(
       end
    end
 
-   wire [47:0] p_1, p_2, p_3, p_4;
-   wire [DEPTH-1:0] bacc0;
+   // Datapath: Shift registers for block sums
+
+   wire [47:0] p_1, p_2, p_3, p_4, p_5; // _rrrrr
+   wire [Y_DEPTH-1:0] bacc0_Y;
+   wire [C_DEPTH-1:0] bacc0_C;
+   wire [L_DEPTH-1:0] bacc0_L;
    shift_reg #(
       .DELAYS (HBLKS),
-      .WIDTH (DEPTH)
-   ) i_bacc (
+      .WIDTH (Y_DEPTH)
+   ) i_bacc_Y (
       .clk_i (clk_i),
       .cen_i (~rst_ni || h_save_rrrrr),
-      .d_i ({DEPTH{rst_ni}} & p_4[DEPTH-1:0]),
-      .d_o (bacc0)
+      .d_i ({Y_DEPTH{rst_ni}} & p_4[Y_DEPTH-1:0]),
+      .d_o (bacc0_Y)
    );
+   shift_reg #(
+      .DELAYS (HBLKS),
+      .WIDTH (C_DEPTH)
+   ) i_bacc_C (
+      .clk_i (clk_i),
+      .cen_i (~rst_ni || h_save_rrrrr),
+      .d_i ({C_DEPTH{rst_ni}} & p_5[24+C_DEPTH-1:24]),
+      .d_o (bacc0_C)
+   );
+   shift_reg #(
+      .DELAYS (HBLKS),
+      .WIDTH (L_DEPTH)
+   ) i_bacc_L (
+      .clk_i (clk_i),
+      .cen_i (~rst_ni || h_save_rrrrr),
+      .d_i ({L_DEPTH{rst_ni}} & p_5[L_DEPTH-1:0]),
+      .d_o (bacc0_L)
+   );
+
+   // Datapath: Y
 
    DSP48E1 #(
       .OPMODEREG (1),
@@ -74,7 +109,7 @@ module blk_buffer #(
    ) i_dsp_1 (
       .A ({22'b0,wd_i[23:16]}),
       .B (18'd109),
-      .C ({{(48-DEPTH){1'b0}},bacc0}), // Unsigned extension desired!
+      .C ({{(48-Y_DEPTH){1'b0}},bacc0_Y}), // Unsigned extension desired!
       .PCIN (0),
       .PCOUT (p_1),
       .P (),
@@ -189,38 +224,146 @@ module blk_buffer #(
       .PATTERNDETECT (), .PATTERNBDETECT (), .OVERFLOW (), .UNDERFLOW ()
    );
 
-   wire p_4s = p_4 >= THRES; // _rrrrr
-   reg [HBLKS-1:0] bt;
+   wire p_4s = p_4 >= Y_THRES; // _rrrrr
+
+   // Datapath: C & L
+
+   reg [23:0] rbg_r, rbg_rr;
+   reg [7:0] max_rrr, min_rrr;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
-         bt <= 0;
-      end else if (h_save_rrrrr) begin
-         bt <= {p_4s,bt[HBLKS-1:1]};
+         rbg_r <= 0;
+         rbg_rr <= 0;
+         max_rrr <= 0;
+         min_rrr <= 0;
+      end else begin
+         if (wd_i[23:16] >= wd_i[15:8]) begin
+            rbg_r <= {wd_i[23:16],wd_i[15:8],wd_i[7:0]};
+         end else begin
+            rbg_r <= {wd_i[15:8],wd_i[23:16],wd_i[7:0]};
+         end
+         if (rbg_r[15:8] >= rbg_r[7:0]) begin
+            rbg_rr <= {rbg_r[23:16],rbg_r[15:8],rbg_r[7:0]};
+         end else begin
+            rbg_rr <= {rbg_r[23:16],rbg_r[7:0],rbg_r[15:8]};
+         end
+         if (rbg_rr[23:16] >= rbg_rr[15:8]) begin
+            max_rrr <= rbg_rr[23:16];
+         end else begin
+            max_rrr <= rbg_rr[15:8];
+         end
+         min_rrr <= rbg_rr[7:0];
       end
    end
 
-   wire [HBLKS-1:0] lbuf;
+   wire [23:0] C_rrr = max_rrr - min_rrr;
+   wire [23:0] L_rrr = max_rrr + min_rrr;
+   DSP48E1 #(
+      .OPMODEREG (1),
+      .CREG (1),
+      .MREG (0),
+      .DREG (1), .ADREG (1),
+      .USE_MULT ("NONE"),
+      .USE_SIMD ("TWO24")
+   ) i_dsp_5 (
+      .A (0),
+      .B (0),
+      .C ({C_rrr,L_rrr}),
+      .PCIN (),
+      .PCOUT (),
+      .P (p_5),
+
+      // h_clear_rrr == 0: X = 0, Y = C, Z = P_r
+      // h_clear_rrr == 1: X = 0, Y = C, Z = 0
+      .OPMODE (h_clear_rrr ? 7'b0001100 : 7'b0101100),
+      .ALUMODE (4'b0000), // P_r <= Z + X + Y + CIN
+      .INMODE (5'b00010),
+      .CARRYINSEL (3'b000), // CIN = CARRYIN
+
+      .D (0),
+      .CEA1 (1), .CEA2 (1), .CEB1 (1), .CEB2 (1), .CEC (1), .CED (0), .CEM (0), .CEP (1), .CEAD (0),
+      .CEALUMODE (1), .CECTRL (1), .CECARRYIN (1), .CEINMODE (1),
+      .RSTA (~rst_ni), .RSTB (~rst_ni), .RSTC (~rst_ni), .RSTD (0), .RSTM (0), .RSTP (~rst_ni),
+      .RSTCTRL (~rst_ni), .RSTALLCARRYIN (~rst_ni), .RSTALUMODE (~rst_ni), .RSTINMODE (~rst_ni),
+      .CLK (clk_i),
+      .ACIN (0), .BCIN (0), .CARRYIN (0), .CARRYCASCIN (0), .MULTSIGNIN (0),
+      .ACOUT (), .BCOUT (), .CARRYOUT (), .CARRYCASCOUT (), .MULTSIGNOUT (),
+      .PATTERNDETECT (), .PATTERNBDETECT (), .OVERFLOW (), .UNDERFLOW ()
+   );
+
+   wire p_5c = p_5[47:24] >= C_THRES; // _rrrrr
+   wire p_5l = p_5[23:0] >= L_THRES; // _rrrrr
+
+   // Datapath: Block Comparers
+
+   reg [HBLKS-1:0] bt_Y, bt_C, bt_L;
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         bt_Y <= 0;
+         bt_C <= 0;
+         bt_L <= 0;
+      end else if (h_save_rrrrr) begin
+         bt_Y <= {p_4s,bt_Y[HBLKS-1:1]};
+         bt_C <= {p_5c,bt_C[HBLKS-1:1]}; // TODO
+         bt_L <= {p_5l,bt_L[HBLKS-1:1]}; // TODO
+      end
+   end
+
+   // Datapath: Frame Buffers
+
+   wire [HBLKS-1:0] lbuf_Y, lbuf_C, lbuf_L;
    shift_reg #(
       .DELAYS (VBLKS-1),
       .WIDTH (HBLKS)
-   ) i_lbs (
+   ) i_lbs_Y (
       .clk_i (clk_i),
       .cen_i (~rst_ni || v_save_rrrrrr),
-      .d_i ({HBLKS{rst_ni}} & bt),
-      .d_o (lbuf)
+      .d_i ({HBLKS{rst_ni}} & bt_Y),
+      .d_o (lbuf_Y)
+   );
+   shift_reg #(
+      .DELAYS (VBLKS-1),
+      .WIDTH (HBLKS)
+   ) i_lbs_C (
+      .clk_i (clk_i),
+      .cen_i (~rst_ni || v_save_rrrrrr),
+      .d_i ({HBLKS{rst_ni}} & bt_C),
+      .d_o (lbuf_C)
+   );
+   shift_reg #(
+      .DELAYS (VBLKS-1),
+      .WIDTH (HBLKS)
+   ) i_lbs_L (
+      .clk_i (clk_i),
+      .cen_i (~rst_ni || v_save_rrrrrr),
+      .d_i ({HBLKS{rst_ni}} & bt_L),
+      .d_o (lbuf_L)
    );
 
-   reg [HBLKS-1:0] lbuf_r;
+   reg [HBLKS-1:0] lbuf_Y_r, lbuf_C_r, lbuf_L_r;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
-         lbuf_r <= 0;
+         lbuf_Y_r <= 0;
+         lbuf_C_r <= 0;
+         lbuf_L_r <= 0;
       end else if (v_save_rrrrrr) begin
-         lbuf_r <= lbuf;
+         lbuf_Y_r <= lbuf_Y;
+         lbuf_C_r <= lbuf_C;
+         lbuf_L_r <= lbuf_L;
       end else if (h_save_i) begin
-         lbuf_r <= {lbuf_r[0],lbuf_r[HBLKS-1:1]};
+         lbuf_Y_r <= {lbuf_Y_r[0],lbuf_Y_r[HBLKS-1:1]};
+         lbuf_C_r <= {lbuf_C_r[0],lbuf_C_r[HBLKS-1:1]};
+         lbuf_L_r <= {lbuf_L_r[0],lbuf_L_r[HBLKS-1:1]};
       end
    end
 
-   assign rx_o = lbuf_r[0];
+   // Datapath: Final Outputs
+
+   assign px_C_rrr_o = C_rrr[7:0];
+   assign px_L_rrr_o = L_rrr[8:1];
+
+   assign Y_o = lbuf_Y_r[0];
+   assign C_o = lbuf_C_r[0];
+   assign L_o = lbuf_L_r[0];
 
 endmodule
