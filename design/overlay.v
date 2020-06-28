@@ -90,8 +90,8 @@ module overlay #(
       end
    end
 
-   reg [2:0] mode;
    reg [31:0] cnt;
+   (* mark_debug = "true" *) reg [2:0] mode;
    (* mark_debug = "true" *) reg en;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin

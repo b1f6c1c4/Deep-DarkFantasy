@@ -5,4 +5,5 @@ create_clock -add -name sys_clk_pin -period 8.00 -waveform {0 4} [get_ports { cl
 create_clock -period $VIN_PERIOD -name hdmi_in_clk_p -waveform [list 0.000 $VIN_HPERIOD] [get_ports hdmi_in_clk_p]
 
 set_false_path -through [get_nets i_rotary/out[*]]
+set_false_path -through [get_nets i_overlay/mode[*]]
 set_false_path -through [get_nets i_overlay/en]

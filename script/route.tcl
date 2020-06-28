@@ -3,7 +3,7 @@ source ../script/common.tcl
 open_checkpoint post_place.dcp
 
 phys_opt_design
-route_design
+route_design -directive Explore
 
 write_checkpoint -force post_route.dcp
 report_route_status -file report/route_status.rpt
