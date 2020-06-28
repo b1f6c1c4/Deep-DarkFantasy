@@ -213,6 +213,7 @@ module top #(
       .KV (KV),
       .SMOOTH_T (SMOOTH_T)
    ) i_fantasy (
+      .clk_i (clk_i),
       .rst_ni (rst_n),
       .mode_i (fantasy_mode),
 

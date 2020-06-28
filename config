@@ -9,3 +9,6 @@ FREQ=148.50
 KH=30 # Block width (px)
 KV=30 # Block height (px)
 SMOOTH_T=1400 # Smoothing time (ms)
+
+# Overlay parameters
+FONT_SZ=26 # (blocks)

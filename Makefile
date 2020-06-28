@@ -4,6 +4,7 @@ BOOTGEN?=bootgen
 DESIGN=$(wildcard design/*.v)
 CONSTR=$(wildcard constr/*.xdc)
 XCI=$(patsubst ip/%.xci,%,$(wildcard ip/*.xci))
+FONT?=/usr/share/fonts/TTF/Consolas-Regular.ttf
 
 PART=xc7z020clg400-1
 export PART
@@ -17,6 +18,7 @@ export FREQ
 export KH
 export KV
 export SMOOTH_T
+export FONT_SZ
 
 image: build/BOOT.bin
 
@@ -24,6 +26,9 @@ build: build/output.bit
 
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
+
+build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) config
+	./script/launch.sh $< $(XCI)
 
 define IP_TEMPLATE
 
@@ -42,9 +47,6 @@ vivado-library/dvi2rgb/src/dgl_1080p_cea.data: design/edid.txt
 		| xxd -r | xxd -b -c 1 | awk '{ print $$2; }' >$@
 
 build/ip/dvi2rgb_1080p/dvi2rgb_1080p.dcp: vivado-library/dvi2rgb/src/dgl_1080p_cea.data
-
-build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) config
-	./script/launch.sh $< $(XCI)
 
 build/post_opt.dcp: script/opt.tcl build/post_synth.dcp
 	./script/launch.sh $<
@@ -66,6 +68,14 @@ build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf: script/fsbl-sdk.tcl build/system.hdf
 
 build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/output.bit
 	$(SDK)/bin/bootgen -arch zynq -image $< -w -o build/BOOT.bin
+
+build/overlay/font_info.json: config
+	lv_font_conv --font $(FONT) -r 0x30-0x37 --size $(FONT_SZ) --format dump --full-info --bpp 1 -o build/overlay/
+
+build/overlay/rom.mem: script/overlay.js build/overlay/font_info.json
+	node $^ >$@
+
+build/post_synth.dcp: build/overlay/rom.mem
 
 clean:
 	rm -rf build/
