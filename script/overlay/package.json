@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "dependencies": {
+    "lv_font_conv": "^1.0.0",
+    "png-js": "^1.0.0"
+  }
+}

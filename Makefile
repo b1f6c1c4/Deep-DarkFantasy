@@ -69,10 +69,19 @@ build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf: script/fsbl-sdk.tcl build/system.hdf
 build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/output.bit
 	$(SDK)/bin/bootgen -arch zynq -image $< -w -o build/BOOT.bin
 
-build/overlay/font_info.json: config
-	lv_font_conv --font $(FONT) -r 0x30-0x37 --size $(FONT_SZ) --format dump --full-info --bpp 1 -o build/overlay/
+build/overlay/node_modules: script/overlay/package.json script/overlay/package-lock.json
+	mkdir -p build/overlay/
+	cp -f $^ build/overlay/
+	cd build/overlay/ && npm ci
 
-build/overlay/config: script/overlay.js build/overlay/font_info.json
+build/overlay/font_info.json: build/overlay/node_modules config
+	./build/overlay/node_modules/lv_font_conv/lv_font_conv.js --font $(FONT) -r 0x30-0x37 --size $(FONT_SZ) --format dump --bpp 1 -o build/overlay/
+
+build/overlay/overlay.js: script/overlay/overlay.js
+	mkdir -p build/overlay/
+	cp $< $@
+
+build/overlay/config: build/overlay/overlay.js build/overlay/font_info.json
 	node $^ 2>$@ >build/overlay/rom.mem
 	cat $@
 

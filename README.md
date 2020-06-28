@@ -124,8 +124,6 @@ Furthermore, *Deep:* Dark-Fantasy may not work as desired with very small (<5) `
 The project takes a while to build - usually several minutes to half an hour.
 Multicore won't help.
 ```bash
-# Install https://github.com/lvgl/lv_font_conv
-npm i -g lv_font_conv
 # Specify your Xilinx Vivado installation
 # Specify your Xilinx SDK installation
 export VIVODO=/opt/xilinx/Vivado/2018.2

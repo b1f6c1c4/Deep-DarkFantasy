@@ -53,9 +53,8 @@ module overlay #(
       end
    end
    reg mask_r, mask_rr, mask_rrr;
-   reg [$clog2(BLKS)-1:0] addr_r;
    reg [$clog2(WORDS)-1:0] waddr_r, waddr_rr;
-   reg [1:0] baddr_r, baddr_rr, baddr_rrr;
+   reg [2:0] baddr_r, baddr_rr, baddr_rrr;
    reg [63:0] pat_rrr;
    reg [7:0] pat_rrrr, pat_rrrrr;
    always @(posedge vin_clk_i) begin
@@ -111,7 +110,7 @@ module overlay #(
 
    always @(*) begin
       data_o = data_i;
-      if (en && pat_rrrrr[mode_i]) begin
+      if (en && pat_rrrrr[mode]) begin
          if (data_i[23:16] >= 128) begin
             data_o[23:16] = data_i[23:16] - 128;
          end else begin
