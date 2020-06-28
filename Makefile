@@ -27,7 +27,7 @@ build: build/output.bit
 program: script/program.tcl build/output.bit
 	./script/launch.sh $<
 
-build/post_synth.dcp: script/synth.tcl $(DESIGN) $(CONSTR) config
+build/post_synth.dcp: script/synth.tcl $(DESIGN) constr/timing.xdc config
 	./script/launch.sh $< $(XCI)
 
 define IP_TEMPLATE
@@ -48,10 +48,10 @@ vivado-library/dvi2rgb/src/dgl_1080p_cea.data: design/edid.txt
 
 build/ip/dvi2rgb_1080p/dvi2rgb_1080p.dcp: vivado-library/dvi2rgb/src/dgl_1080p_cea.data
 
-build/post_opt.dcp: script/opt.tcl build/post_synth.dcp
+build/post_opt.dcp: script/opt.tcl build/post_synth.dcp constr/debug.xdc
 	./script/launch.sh $<
 
-build/post_place.dcp: script/place.tcl build/post_opt.dcp
+build/post_place.dcp: script/place.tcl build/post_opt.dcp constr/zybo-z7-20.xdc
 	./script/launch.sh $<
 
 build/post_route.dcp: script/route.tcl build/post_place.dcp
@@ -86,6 +86,9 @@ build/overlay/config: build/overlay/overlay.js build/overlay/font_info.json
 	cat $@
 
 build/post_synth.dcp: build/overlay/config
+
+constr/debug.xdc:
+	touch $@
 
 clean:
 	rm -rf build/

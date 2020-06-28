@@ -1,2 +1,3 @@
 /build
 /vivado-library/dvi2rgb/src/dgl_1080p_cea.data
+/constr/debug.xdc

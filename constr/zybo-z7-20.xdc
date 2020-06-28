@@ -6,7 +6,6 @@
 
 #Clock signal
 set_property -dict { PACKAGE_PIN K17   IOSTANDARD LVCMOS33 } [get_ports { clk_i }]; #IO_L12P_T1_MRCC_35 Sch=sysclk
-create_clock -add -name sys_clk_pin -period 8.00 -waveform {0 4} [get_ports { clk_i }];
 
 
 #Switches
@@ -67,9 +66,6 @@ set_property -dict { PACKAGE_PIN D18   IOSTANDARD LVCMOS33 } [get_ports { led_o[
 
 
 #HDMI RX
-set VIN_PERIOD [expr {double(round(1e6/$VIN_FREQ))/1000}]
-set VIN_HPERIOD [expr {double(round(5e5/$VIN_FREQ))/1000}]
-create_clock -period $VIN_PERIOD -name hdmi_in_clk_p -waveform [list 0.000 $VIN_HPERIOD] [get_ports hdmi_in_clk_p]
 set_property -dict { PACKAGE_PIN W19   IOSTANDARD LVCMOS33 } [get_ports { hdmi_in_hpd_o }]; #IO_L22N_T3_34 Sch=hdmi_rx_hpd
 set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 } [get_ports { hdmi_in_ddc_scl_io }]; #IO_L22P_T3_34 Sch=hdmi_rx_scl
 set_property -dict { PACKAGE_PIN Y19   IOSTANDARD LVCMOS33 } [get_ports { hdmi_in_ddc_sda_io }]; #IO_L17N_T2_34 Sch=hdmi_rx_sda
