@@ -72,7 +72,6 @@ FREQ=148.50
 # Dark-Fantasy parameters
 KH=30 # Block width (px)
 KV=30 # Block height (px)
-SMOOTH_W=6 # Smoothing width, log of 2
 SMOOTH_T=1400 # Smoothing time (ms)
 ```
 
@@ -114,8 +113,6 @@ Furthermore, *Deep:* Dark-Fantasy may not work as desired with very small (<5) `
 
 ### Step 4: Configure the smoothing parameters
 
-- `SMOOTH_W` specifies the width of the smoothing edge when toggling the switches.
-Note that this value is the base-2 logarithmic of the actual width.
 - `SMOOTH_T` specifies the overall time of transition (in milliseconds).
 
 ### Step 5: Build the project
