@@ -21,19 +21,26 @@ info.glyphs.forEach((g, i) => {
   const y0 = Math.floor((dy - g.bbox.height) / 2);
   g.pixels.forEach((l, y) => {
     l.forEach((v, x) => {
-      if (v) arr[(x + x0) + (y + y0) * hp] |= 1 << id;
+      if (v) arr[(x + x0) + (y + y0) * dx] |= 1 << id;
     });
   });
 });
 
+const words = Math.ceil(blks / 8);
 console.error(`# OVERLAY_PIXELS=${blks}`);
-console.error(`# OVERLAY_TOTAL=${blks * 8 / 1024 / 1024} # Mib`);
+console.error(`# OVERLAY_WORDS=${words}`);
+console.error(`# OVERLAY_TOTAL=${words * 64 / 1024 / 1024} # Mib`);
 console.error(`OVERLAY_XMIN=${xMin}`);
 console.error(`OVERLAY_XMAX=${xMax}`);
 console.error(`OVERLAY_YMIN=${yMin}`);
 console.error(`OVERLAY_YMAX=${yMax}`);
 
-arr.forEach((w) => {
+arr.forEach((w, i) => {
   const s = w.toString(16);
-  console.log('0'.repeat(8 - s.length) + s);
+  process.stdout.write('0'.repeat(2 - s.length) + s, 'utf-8');
+  if (i % 8 === 7) console.log();
 });
+
+if (blks % 8) {
+  console.log('0'.repeat(2 * (8 - blks % 8)));
+}

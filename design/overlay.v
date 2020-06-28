@@ -18,85 +18,114 @@ module overlay #(
    localparam HBLKS = XMAX - XMIN + 1;
    localparam VBLKS = YMAX - YMIN + 1;
    localparam BLKS = HBLKS * VBLKS;
+   localparam WORDS = (BLKS + 7) / 8;
    localparam MAX_CNT = 200000000;
 
-   reg [7:0] rom[0:BLKS-1];
+   reg [63:0] rom[0:WORDS-1];
    initial begin
       $readmemh("overlay/rom.mem", rom);
    end
 
    reg vin_de_r;
-   reg [$clog2(XMAX+1)-1:0] hc;
-   reg [$clog2(YMAX+1)-1:0] vc;
+   reg [$clog2(XMAX+2)-1:0] hc;
+   reg [$clog2(YMAX+2)-1:0] vc;
+   wire hcen = hc >= XMIN && hc <= XMAX;
+   wire vcen = vc >= YMIN && vc <= YMAX;
+   wire mask = hcen && vcen;
+   reg [$clog2(BLKS)-1:0] addr;
    always @(posedge vin_clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          hc <= 0;
          vc <= 0;
+         addr <= 0;
       end else if (vin_vs_i) begin
          hc <= 0;
          vc <= 0;
+         addr <= 0;
       end else if (vin_de_i) begin
          hc <= hc <= XMAX ? hc + 1 : hc;
+         if (mask) begin
+            addr <= addr + 1;
+         end
       end else if (vin_de_r && ~vin_de_i) begin
          hc <= 0;
          vc <= vc <= YMAX ? vc + 1 : vc;
       end
    end
+   reg mask_r, mask_rr, mask_rrr;
    reg [$clog2(BLKS)-1:0] addr_r;
-   reg mask_r;
+   reg [$clog2(WORDS)-1:0] waddr_r, waddr_rr;
+   reg [1:0] baddr_r, baddr_rr, baddr_rrr;
+   reg [63:0] pat_rrr;
+   reg [7:0] pat_rrrr, pat_rrrrr;
+   always @(posedge vin_clk_i) begin
+      vin_de_r <= vin_de_i;
+      mask_r <= mask;
+      mask_rr <= mask_r;
+      mask_rrr <= mask_rr;
+      waddr_rr <= waddr_r;
+      baddr_rr <= baddr_r;
+      baddr_rrr <= baddr_rr;
+      if (mask_rr) begin
+         pat_rrr <= rom[waddr_rr];
+      end
+      pat_rrrrr <= pat_rrrr;
+   end
    always @(posedge vin_clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
-         vin_de_r <= 0;
-         addr_r <= 0;
-         mask_r <= 0;
+         waddr_r <= 0;
+         baddr_r <= 0;
+         pat_rrrr <= 8'b0;
       end else begin
-         vin_de_r <= vin_de_i;
-         addr_r <= (hc - XMIN) + (vc - YMIN) * HBLKS;
-         mask_r <= hc >= XMIN && hc <= XMAX && vc >= YMIN && vc <= YMAX;
+         if (mask) begin
+            waddr_r <= addr / 8;
+            baddr_r <= addr % 8;
+         end
+         if (mask_rrr) begin
+            pat_rrrr <= pat_rrr >> (8 * (7 - baddr_rrr));
+         end else begin
+            pat_rrrr <= 8'b0;
+         end
       end
-   end
-
-   reg [7:0] pat_rr, pat_rrr, pat_rrrr, pat_rrrrr;
-   always @(posedge vin_clk_i) begin
-      if (mask_r) begin
-         pat_rr <= rom[addr_r];
-      end else begin
-         pat_rr <= 8'b0;
-      end
-      {pat_rrr, pat_rrrr, pat_rrrrr} <= {pat_rr, pat_rrr, pat_rrrr};
    end
 
    reg [2:0] mode;
    reg [31:0] cnt;
+   (* mark_debug = "true" *) reg en;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          cnt <= 0;
          mode <= 0;
+         en <= 1;
       end else if (mode != mode_i) begin
          cnt <= 0;
          mode <= mode_i;
+         en <= 1;
       end else if (cnt < MAX_CNT) begin
          cnt <= cnt + 1;
+         en <= 1;
+      end else begin
+         en <= 0;
       end
    end
 
    always @(*) begin
       data_o = data_i;
-      if (cnt < MAX_CNT && pat_rrrrr[mode_i]) begin
-         if (data_i[23:16] >= 8'h55) begin
-            data_o[23:16] = 0;
+      if (en && pat_rrrrr[mode_i]) begin
+         if (data_i[23:16] >= 128) begin
+            data_o[23:16] = data_i[23:16] - 128;
          end else begin
-            data_o[23:16] = 8'h55 - data_i[23:16];
+            data_o[23:16] = 127 - data_i[23:16];
          end
-         if (data_i[15:8] >= 8'h55) begin
-            data_o[15:8] = 0;
+         if (data_i[15:8] >= 128) begin
+            data_o[15:8] = data_i[15:8] - 128;
          end else begin
-            data_o[15:8] = 8'h55 - data_i[15:8];
+            data_o[15:8] = 127 - data_i[15:8];
          end
-         if (data_i[7:0] >= 8'h55) begin
-            data_o[7:0] = 0;
+         if (data_i[7:0] >= 128) begin
+            data_o[7:0] = data_i[7:0] - 128;
          end else begin
-            data_o[7:0] = 8'h55 - data_i[7:0];
+            data_o[7:0] = 127 - data_i[7:0];
          end
       end
    end

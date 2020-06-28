@@ -48,7 +48,7 @@ You can follow these steps get *Deep:* Dark-Fantasy running:
 
 **If the default settings don't work for you for some reason, you should try build the project from source code.**
 
-Note: You need Xilinx Vivado (2018.2), `make`, `bash`, and `awk` to generate the bitstream file. Futhermore, you need Xilinx SDK (2018.2), `make`, `bash` to generate the bootable image.
+Note: You need Xilinx Vivado (2018.2), `make`, `bash`, `node`, `npm`, and `awk` to generate the bitstream file. Futhermore, you need Xilinx SDK (2018.2), `make`, `bash` to generate the bootable image.
 
 ### Step 1: Get the source code
 
@@ -73,6 +73,9 @@ FREQ=148.50
 KH=30 # Block width (px)
 KV=30 # Block height (px)
 SMOOTH_T=1400 # Smoothing time (ms)
+
+# Overlay parameters
+FONT_SZ=720 # (px)
 ```
 
 ### Step 2: Configure the video parameters
@@ -111,15 +114,18 @@ It is used to specify the size of blocks - the smaller blocks are, the finer gra
 However, if the blocks are too small, texts will become illegible for read.
 Furthermore, *Deep:* Dark-Fantasy may not work as desired with very small (<5) `KH` and/or `KV`.
 
-### Step 4: Configure the smoothing parameters
+### Step 4: Configure the other parameters
 
-- `SMOOTH_T` specifies the overall time of transition (in milliseconds).
+- `SMOOTH_T` specifies the overall time of smooth transition (in milliseconds).
+- `FONT_SZ` specifies the size of overlay mode font (in pixels). Should be less than or equal to the height of the screen.
 
 ### Step 5: Build the project
 
 The project takes a while to build - usually several minutes to half an hour.
 Multicore won't help.
 ```bash
+# Install https://github.com/lvgl/lv_font_conv
+npm i -g lv_font_conv
 # Specify your Xilinx Vivado installation
 # Specify your Xilinx SDK installation
 export VIVODO=/opt/xilinx/Vivado/2018.2

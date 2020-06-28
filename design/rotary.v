@@ -8,7 +8,7 @@ module rotary #(
    input rst_ni,
 
    input [T-1:0] rot_ni,
-   output reg [$clog2(N)-1:0] counter_o
+   output [$clog2(N)-1:0] counter_o
 );
 
    reg [31:0] pre_cnt;
@@ -35,12 +35,13 @@ module rotary #(
 
    reg [31:0] cnt;
    reg [T-1:0] rot_nr, rot_nrr;
+   (* mark_debug = "true" *) reg [$clog2(N)-1:0] out;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          cnt <= 0;
          rot_nr <= {T{1'b1}};
          rot_nrr <= {T{1'b1}};
-         counter_o <= INIT;
+         out <= INIT;
       end else if (rot_nrr == rot_nr) begin
          if (~&pre_rot_nr) begin
             rot_nr <= pre_rot_nr;
@@ -53,18 +54,18 @@ module rotary #(
             if (rot_nr == {rot_nrr[0],rot_nrr[T-1:1]}
                && pre_rot_nr == {rot_nr[0],rot_nr[T-1:1]}) begin
                rot_nrr <= rot_nr;
-               if (counter_o == N - 1) begin
-                  counter_o <= SAT ? N - 1 : 0;
+               if (out == N - 1) begin
+                  out <= SAT ? N - 1 : 0;
                end else begin
-                  counter_o <= counter_o + 1;
+                  out <= out + 1;
                end
             end else if (rot_nr == {rot_nrr[T-2:0],rot_nrr[T-1]}
                && pre_rot_nr == {rot_nr[T-2:0],rot_nr[T-1]}) begin
                rot_nrr <= rot_nr;
-               if (counter_o == 0) begin
-                  counter_o <= SAT ? 0 : N - 1;
+               if (out == 0) begin
+                  out <= SAT ? 0 : N - 1;
                end else begin
-                  counter_o <= counter_o - 1;
+                  out <= out - 1;
                end
             end
          end else if (cnt < 200000) begin
@@ -72,18 +73,18 @@ module rotary #(
          end else if (rot_nr == {rot_nrr[0],rot_nrr[T-1:1]}) begin
             cnt <= 0;
             rot_nrr <= rot_nr;
-            if (counter_o == N - 1) begin
-               counter_o <= SAT ? N - 1 : 0;
+            if (out == N - 1) begin
+               out <= SAT ? N - 1 : 0;
             end else begin
-               counter_o <= counter_o + 1;
+               out <= out + 1;
             end
          end else if (rot_nr == {rot_nrr[T-2:0],rot_nrr[T-1]}) begin
             cnt <= 0;
             rot_nrr <= rot_nr;
-            if (counter_o == 0) begin
-               counter_o <= SAT ? 0 : N - 1;
+            if (out == 0) begin
+               out <= SAT ? 0 : N - 1;
             end else begin
-               counter_o <= counter_o - 1;
+               out <= out - 1;
             end
          end else begin
             cnt <= 0;
@@ -91,5 +92,7 @@ module rotary #(
          end
       end
    end
+
+   assign counter_o = out;
 
 endmodule
