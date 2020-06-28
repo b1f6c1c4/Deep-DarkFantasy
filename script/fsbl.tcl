@@ -1,4 +1,4 @@
-set_param general.maxThreads 8
+source ../script/common.tcl
 
 create_project -force -part $::env(PART) fsbl ./fsbl/
 

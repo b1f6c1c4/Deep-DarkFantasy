@@ -1,4 +1,4 @@
-set_param general.maxThreads 8
+source ../script/common.tcl
 
 open_checkpoint post_place.dcp
 
@@ -14,3 +14,4 @@ report_timing -hold -nworst 10 -file report/hold_violations.rpt
 
 report_power -advisory -file report/power_route.rpt
 report_utilization -file report/util_route.rpt
+report_drc -file report/drc_route.rpt

@@ -1,3 +1,5 @@
+source ../script/common.tcl
+
 open_hw_manager
 connect_hw_server -url localhost:3121
 current_hw_target [get_hw_targets */xilinx_tcf/Digilent/210351A82051A]

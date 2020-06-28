@@ -24,15 +24,15 @@ image: build/BOOT.bin
 
 build: build/output.bit
 
-program: script/program.tcl build/output.bit
+program: script/program.tcl script/common.tcl build/output.bit
 	./script/launch.sh $<
 
-build/post_synth.dcp: script/synth.tcl $(DESIGN) constr/timing.xdc config
+build/post_synth.dcp: script/synth.tcl script/common.tcl $(DESIGN) constr/timing.xdc config
 	./script/launch.sh $< $(XCI)
 
 define IP_TEMPLATE
 
-build/ip/$1/$1.dcp: script/synth_ip.tcl ip/$1.xci
+build/ip/$1/$1.dcp: script/synth_ip.tcl ip/$1.xci script/common.tcl
 	./script/launch.sh $$^
 
 build/post_synth.dcp: build/ip/$1/$1.dcp
@@ -48,16 +48,16 @@ vivado-library/dvi2rgb/src/dgl_1080p_cea.data: design/edid.txt
 
 build/ip/dvi2rgb_1080p/dvi2rgb_1080p.dcp: vivado-library/dvi2rgb/src/dgl_1080p_cea.data
 
-build/post_opt.dcp: script/opt.tcl build/post_synth.dcp constr/debug.xdc
+build/post_opt.dcp: script/opt.tcl script/common.tcl build/post_synth.dcp constr/debug.xdc
 	./script/launch.sh $<
 
-build/post_place.dcp: script/place.tcl build/post_opt.dcp constr/zybo-z7-20.xdc
+build/post_place.dcp: script/place.tcl script/common.tcl build/post_opt.dcp constr/zybo-z7-20.xdc
 	./script/launch.sh $<
 
-build/post_route.dcp: script/route.tcl build/post_place.dcp
+build/post_route.dcp: script/route.tcl script/common.tcl build/post_place.dcp
 	./script/launch.sh $<
 
-build/output.bit: script/bitstream.tcl build/post_route.dcp
+build/output.bit: script/bitstream.tcl script/common.tcl build/post_route.dcp
 	./script/launch.sh $<
 
 build/system.hdf: script/fsbl.tcl

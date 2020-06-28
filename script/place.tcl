@@ -1,4 +1,4 @@
-set_param general.maxThreads 8
+source ../script/common.tcl
 
 open_checkpoint post_opt.dcp
 

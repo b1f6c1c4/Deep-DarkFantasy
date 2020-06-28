@@ -1,4 +1,4 @@
-set_param general.maxThreads 8
+source ../script/common.tcl
 
 set_part $::env(PART)
 
@@ -13,6 +13,10 @@ if {[llength $names] > 0} {
    generate_target all [get_ips *]
    synth_ip [get_ips *]
 }
+
+set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*.xdc]]
+set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*/*.xdc]]
+set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*/*/*/*.xdc]]
 
 set VIN_FREQ $::env(FREQ)
 read_xdc [glob ../constr/timing.xdc]

@@ -1,3 +1,5 @@
+source ../script/common.tcl
+
 set_part $::env(PART)
 
 set_property ip_repo_paths ../vivado-library [current_project]
