@@ -6,6 +6,7 @@ module top #(
    parameter KH = 30,
    parameter KV = 30,
    parameter SMOOTH_T = 1400,
+   parameter OVERLAY_WIDTH = 1,
    parameter OVERLAY_XMIN = 0,
    parameter OVERLAY_XMAX = 0,
    parameter OVERLAY_YMIN = 0,
@@ -236,6 +237,7 @@ module top #(
    // Overlay
 
    overlay #(
+      .WIDTH (OVERLAY_WIDTH),
       .XMIN (OVERLAY_XMIN),
       .XMAX (OVERLAY_XMAX),
       .YMIN (OVERLAY_YMIN),

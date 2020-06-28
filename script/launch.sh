@@ -19,6 +19,7 @@ if [ "$TCL" = "script/synth_ip.tcl" ]; then
     export IP_NAME
 elif [ "$TCL" = "script/synth.tcl" ]; then
     source build/overlay/config
+    export OVERLAY_WIDTH
     export OVERLAY_XMIN
     export OVERLAY_XMAX
     export OVERLAY_YMIN
@@ -64,6 +65,7 @@ elif [ "$TCL" = "script/synth.tcl" ]; then
     printf '# KH=%s\n' "$KH"
     printf '# KV=%s\n' "$KV"
     printf '# SMOOTH_T=%s\n' "$SMOOTH_T"
+    printf '# OVERLAY_WIDTH=%s\n' "$OVERLAY_WIDTH"
     printf '# OVERLAY_XMIN=%s\n' "$OVERLAY_XMIN"
     printf '# OVERLAY_XMAX=%s\n' "$OVERLAY_XMAX"
     printf '# OVERLAY_YMIN=%s\n' "$OVERLAY_YMIN"

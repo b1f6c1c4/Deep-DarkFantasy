@@ -24,6 +24,7 @@ synth_design -top top \
     -generic KH=$::env(KH) \
     -generic KV=$::env(KV) \
     -generic SMOOTH_T=$::env(SMOOTH_T) \
+    -generic OVERLAY_WIDTH=$::env(OVERLAY_WIDTH) \
     -generic OVERLAY_XMIN=$::env(OVERLAY_XMIN) \
     -generic OVERLAY_XMAX=$::env(OVERLAY_XMAX) \
     -generic OVERLAY_YMIN=$::env(OVERLAY_YMIN) \

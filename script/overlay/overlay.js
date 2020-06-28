@@ -54,12 +54,15 @@ async function run() {
     }
   });
 
-  const width = 8;
-
+  const width = Math.pow(2, Math.ceil(Math.log2(blks) - 15));
   const words = Math.ceil(blks / width);
+  const pp = Math.pow(2, Math.ceil(Math.log2(words) - 15));
   console.error(`# OVERLAY_PIXELS=${blks}`);
   console.error(`# OVERLAY_WORDS=${words}`);
-  console.error(`# OVERLAY_TOTAL=${words * 8 * width / 1024 / 1024} # Mib`);
+  console.error(`# OVERLAY_ACTUAL=${words * 8 * width / 1024 / 1024} # Mib`);
+  console.error(`# OVERLAY_TOTAL=${pp * 8 * width} # Pieces`);
+  console.error(`# OVERLAY_UTIL=${words / (32768 * pp)}`);
+  console.error(`OVERLAY_WIDTH=${width}`);
   console.error(`OVERLAY_XMIN=${xMin}`);
   console.error(`OVERLAY_XMAX=${xMax}`);
   console.error(`OVERLAY_YMIN=${yMin}`);

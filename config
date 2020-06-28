@@ -11,4 +11,4 @@ KV=30 # Block height (px)
 SMOOTH_T=1400 # Smoothing time (ms)
 
 # Overlay parameters
-FONT_SZ=720 # (px)
+FONT_SZ=631 # (px)

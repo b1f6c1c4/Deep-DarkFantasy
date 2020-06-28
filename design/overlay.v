@@ -1,4 +1,5 @@
 module overlay #(
+   parameter WIDTH = 1,
    parameter XMIN = 0,
    parameter XMAX = 0,
    parameter YMIN = 0,
@@ -18,10 +19,11 @@ module overlay #(
    localparam HBLKS = XMAX - XMIN + 1;
    localparam VBLKS = YMAX - YMIN + 1;
    localparam BLKS = HBLKS * VBLKS;
-   localparam WORDS = (BLKS + 7) / 8;
+   localparam WN = 8 << WIDTH;
+   localparam WORDS = (BLKS + WIDTH - 1) / WIDTH;
    localparam MAX_CNT = 200000000;
 
-   reg [63:0] rom[0:WORDS-1];
+   reg [WN-1:0] rom[0:WORDS-1];
    initial begin
       $readmemh("overlay/rom.mem", rom);
    end
@@ -31,7 +33,7 @@ module overlay #(
    reg [$clog2(YMAX+2)-1:0] vc;
    wire hcen = hc >= XMIN && hc <= XMAX;
    wire vcen = vc >= YMIN && vc <= YMAX;
-   wire mask = hcen && vcen;
+   wire mask = hcen && vcen && vin_de_i;
    reg [$clog2(BLKS)-1:0] addr;
    always @(posedge vin_clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
@@ -54,8 +56,8 @@ module overlay #(
    end
    reg mask_r, mask_rr, mask_rrr;
    reg [$clog2(WORDS)-1:0] waddr_r, waddr_rr;
-   reg [2:0] baddr_r, baddr_rr, baddr_rrr;
-   reg [63:0] pat_rrr;
+   reg [$clog2(WIDTH)-1:0] baddr_r, baddr_rr, baddr_rrr;
+   reg [WN-1:0] pat_rrr;
    reg [7:0] pat_rrrr, pat_rrrrr;
    always @(posedge vin_clk_i) begin
       vin_de_r <= vin_de_i;
@@ -77,11 +79,11 @@ module overlay #(
          pat_rrrr <= 8'b0;
       end else begin
          if (mask) begin
-            waddr_r <= addr / 8;
-            baddr_r <= addr % 8;
+            waddr_r <= addr / WIDTH;
+            baddr_r <= addr % WIDTH;
          end
          if (mask_rrr) begin
-            pat_rrrr <= pat_rrr >> (8 * (7 - baddr_rrr));
+            pat_rrrr <= pat_rrr >> (8 * (WIDTH - baddr_rrr - 1));
          end else begin
             pat_rrrr <= 8'b0;
          end
