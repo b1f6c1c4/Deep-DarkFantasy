@@ -66,7 +66,7 @@ module top #(
    rotary #(
       .N (8),
       .SAT (1),
-      .INIT (4),
+      .INIT (3),
       .T (3)
    ) i_rotary (
       .clk_i (clk_i),
