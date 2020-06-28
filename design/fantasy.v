@@ -7,7 +7,6 @@ module fantasy #(
    parameter KV = 30,
    parameter SMOOTH_T = 1400
 ) (
-   input clk_i,
    input rst_ni,
    input [2:0] mode_i,
 
@@ -169,23 +168,7 @@ module fantasy #(
       .vout_hs_o (vout_hs_o),
       .vout_vs_o (vout_vs_o),
       .vout_de_o (vout_de_o),
-      .vout_data_o (vout_data_rrrrrr)
-   );
-
-   // Overlay
-   overlay #(
-      .HBLKS (HBLKS),
-      .VBLKS (VBLKS)
-   ) i_overlay (
-      .clk_i (clk_i),
-      .rst_ni (rst_ni),
-      .mode_i (mode_i),
-
-      .vin_clk_i (vin_clk_i),
-      .ht_cur_i (ht_cur),
-      .vt_cur_i (vt_cur),
-      .data_i (vout_data_rrrrrr),
-      .data_o (vout_data_o)
+      .vout_data_o (vout_data_o)
    );
 
 endmodule

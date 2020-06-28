@@ -72,10 +72,11 @@ build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/
 build/overlay/font_info.json: config
 	lv_font_conv --font $(FONT) -r 0x30-0x37 --size $(FONT_SZ) --format dump --full-info --bpp 1 -o build/overlay/
 
-build/overlay/rom.mem: script/overlay.js build/overlay/font_info.json
-	node $^ >$@
+build/overlay/config: script/overlay.js build/overlay/font_info.json
+	node $^ 2>$@ >build/overlay/rom.mem
+	cat $@
 
-build/post_synth.dcp: build/overlay/rom.mem
+build/post_synth.dcp: build/overlay/config
 
 clean:
 	rm -rf build/

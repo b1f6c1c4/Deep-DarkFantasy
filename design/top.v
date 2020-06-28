@@ -5,7 +5,11 @@ module top #(
    parameter V_HEIGHT = 1080,
    parameter KH = 30,
    parameter KV = 30,
-   parameter SMOOTH_T = 1400
+   parameter SMOOTH_T = 1400,
+   parameter OVERLAY_XMIN = 0,
+   parameter OVERLAY_XMAX = 0,
+   parameter OVERLAY_YMIN = 0,
+   parameter OVERLAY_YMAX = 0
 ) (
    input clk_i,
 
@@ -202,7 +206,7 @@ module top #(
    wire [63:0] AXI_WDATA;
    wire [7:0] AXI_WSTRB;
 
-   wire [23:0] mid_data;
+   wire [23:0] mid_data, fan_data;
 
    fantasy #(
       .H_WIDTH (H_WIDTH),
@@ -213,7 +217,6 @@ module top #(
       .KV (KV),
       .SMOOTH_T (SMOOTH_T)
    ) i_fantasy (
-      .clk_i (clk_i),
       .rst_ni (rst_n),
       .mode_i (fantasy_mode),
 
@@ -227,8 +230,30 @@ module top #(
       .vout_hs_o (vout_hs),
       .vout_vs_o (vout_vs),
       .vout_de_o (vout_de),
-      .vout_data_o (vout_data)
+      .vout_data_o (fan_data)
    );
+
+   // Overlay
+
+   overlay #(
+      .XMIN (OVERLAY_XMIN),
+      .XMAX (OVERLAY_XMAX),
+      .YMIN (OVERLAY_YMIN),
+      .YMAX (OVERLAY_YMAX)
+   ) i_overlay (
+      .clk_i (clk_i),
+      .rst_ni (rst_n),
+      .mode_i (fantasy_mode),
+
+      .vin_clk_i (vin_clk),
+      .vin_vs_i (vin_vs),
+      .vin_de_i (vin_de),
+
+      .data_i (fan_data),
+      .data_o (vout_data)
+   );
+
+   // Delayer
 
    axi_delayer #(
       .H_WIDTH (H_WIDTH),

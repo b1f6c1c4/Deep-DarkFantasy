@@ -1,33 +1,69 @@
 module overlay #(
-   parameter HBLKS = 10,
-   parameter VBLKS = 10
+   parameter XMIN = 0,
+   parameter XMAX = 0,
+   parameter YMIN = 0,
+   parameter YMAX = 0
 ) (
    input clk_i,
    input rst_ni,
    input [2:0] mode_i,
 
    input vin_clk_i,
-   input [$clog2(HBLKS)-1:0] ht_cur_i,
-   input [$clog2(VBLKS)-1:0] vt_cur_i,
+   input vin_vs_i,
+   input vin_de_i,
+
    input [23:0] data_i,
    output reg [23:0] data_o
 );
+   localparam HBLKS = XMAX - XMIN + 1;
+   localparam VBLKS = YMAX - YMIN + 1;
    localparam BLKS = HBLKS * VBLKS;
-   localparam DEPTH = $clog2(BLKS);
    localparam MAX_CNT = 200000000;
 
    reg [7:0] rom[0:BLKS-1];
    initial begin
-      $readmemb("overlay/rom.mem", rom);
+      $readmemh("overlay/rom.mem", rom);
    end
 
-   reg [7:0] pat_r, pat_rr, pat_rrr, pat_rrrr, pat_rrrrr;
+   reg vin_de_r;
+   reg [$clog2(XMAX+1)-1:0] hc;
+   reg [$clog2(YMAX+1)-1:0] vc;
+   always @(posedge vin_clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         hc <= 0;
+         vc <= 0;
+      end else if (vin_vs_i) begin
+         hc <= 0;
+         vc <= 0;
+      end else if (vin_de_i) begin
+         hc <= hc <= XMAX ? hc + 1 : hc;
+      end else if (vin_de_r && ~vin_de_i) begin
+         hc <= 0;
+         vc <= vc <= YMAX ? vc + 1 : vc;
+      end
+   end
+   reg [$clog2(BLKS)-1:0] addr_r;
+   reg mask_r;
+   always @(posedge vin_clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         vin_de_r <= 0;
+         addr_r <= 0;
+         mask_r <= 0;
+      end else begin
+         vin_de_r <= vin_de_i;
+         addr_r <= (hc - XMIN) + (vc - YMIN) * HBLKS;
+         mask_r <= hc >= XMIN && hc <= XMAX && vc >= YMIN && vc <= YMAX;
+      end
+   end
+
+   reg [7:0] pat_rr, pat_rrr, pat_rrrr, pat_rrrrr;
    always @(posedge vin_clk_i) begin
-      pat_r <= rom[ht_cur_i + HBLKS * vt_cur_i];
-      pat_rr <= pat_r;
-      pat_rrr <= pat_rr;
-      pat_rrrr <= pat_rrr;
-      pat_rrrrr <= pat_rrrr;
+      if (mask_r) begin
+         pat_rr <= rom[addr_r];
+      end else begin
+         pat_rr <= 8'b0;
+      end
+      {pat_rrr, pat_rrrr, pat_rrrrr} <= {pat_rr, pat_rrr, pat_rrrr};
    end
 
    reg [2:0] mode;
