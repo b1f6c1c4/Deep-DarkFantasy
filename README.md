@@ -37,18 +37,26 @@ You can follow these steps get *Deep:* Dark-Fantasy running:
 1. Use an HDMI Cable connect your video source (video card / mother board video output) to the HDMI *RX* port of the board.
 1. Use another HDMI Cable connect your video destination (monitor) to the HDMI *TX* port of the board.
 1. Power on the board.
-1. There are four switches on the board. The best settings for *Deep:* Dark-Fantasy should be **all switches turned off** (away form the LEDs means off).
+1. Make sure that all four switches are *off* (away from the LEDs.)
+1. There are four LEDs. LED2~LED0 are used to indicate which Fantasy mode the devices is currently in. There are 8 Fantasy modes in total, so the LEDs are organized in binary form.
 
-    | PCB Symbol | SW3 | SW2 | SW1 | SW0 |
+    | PCB Symbol | LED3 | LED2 | LED1 | LED0 |
     | ---------- | ---- | ---- | ---- | ---- |
-    | Function | Freeze Image | Disable Buffering | Plain Invert | Plain Original |
-    | Description | Turn off buffer refresh, so the image is frozen. | Turn off frame buffering, will reduce the latency but may incur flashing image. | Invert every pixels, not just bright ones. | Don't invert any pixels, even if bright ones. |
+    | Function | Video In | Fantasy Mode (MSB) | Fantasy Mode | Fantasy Mode (LSB) |
+
+1. There are four contiguous black buttons on the board, which can be used to configure *Deep:* Dark-Fantasy to work in one of the 8 Fantasy modes. Try'em all and find the one that fits you best.
+
+    | PCB Symbol | BTN3 | BTN2 | BTN1 | BTN0 |
+    | ---------- | ---- | ---- | ---- | ---- |
+    | Function | Reset | Previous Fantasy | Next Fantasy | Use Default Fantasy (3) |
 
 ## Build *Deep:* Dark-Fantasy from source code
 
 **If the default settings don't work for you for some reason, you should try build the project from source code.**
 
-Note: You need Xilinx Vivado (2018.2), `make`, `bash`, `node`, `npm`, and `awk` to generate the bitstream file. Futhermore, you need Xilinx SDK (2018.2), `make`, `bash` to generate the bootable image.
+Note: You need Xilinx Vivado (2018.2), `make`, `bash`, `node`, `npm`, and `awk` to generate the bitstream file.
+You also need a ttf font for the overlay number display.
+Futhermore, you need Xilinx SDK (2018.2), `make`, `bash` to generate the bootable image.
 
 ### Step 1: Get the source code
 
@@ -75,7 +83,7 @@ KV=30 # Block height (px)
 SMOOTH_T=1400 # Smoothing time (ms)
 
 # Overlay parameters
-FONT_SZ=720 # (px)
+FONT_SZ=631 # (px)
 ```
 
 ### Step 2: Configure the video parameters
@@ -117,13 +125,15 @@ Furthermore, *Deep:* Dark-Fantasy may not work as desired with very small (<5) `
 ### Step 4: Configure the other parameters
 
 - `SMOOTH_T` specifies the overall time of smooth transition (in milliseconds).
-- `FONT_SZ` specifies the size of overlay mode font (in pixels). Should be less than or equal to the height of the screen.
+- `FONT_SZ` specifies the size of overlay mode font (in pixels). If set too large, you will run out of BRAM, so be discreet.
 
 ### Step 5: Build the project
 
 The project takes a while to build - usually several minutes to half an hour.
 Multicore won't help.
 ```bash
+# Specify the font
+export FONT=/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf
 # Specify your Xilinx Vivado installation
 # Specify your Xilinx SDK installation
 export VIVODO=/opt/xilinx/Vivado/2018.2
@@ -136,4 +146,9 @@ make -j8
 You should be able to find `BOOT.bin` in the `build` folder.
 Put it into a FAT32-formatted SD card and put it on your FPGA board.
 Don't forget to configure the boot mode.
+
+## Limitation
+
+- 4K is not supported. 1080p 120Hz is not supported.
+- Only one resolution and refresh rate is supported once synthesized.
 

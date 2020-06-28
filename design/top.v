@@ -77,6 +77,9 @@ module top #(
       .clk_i (clk_i),
       .rst_ni (rst_n),
       .rot_ni (rot_ni),
+      .zero_i (button_i[0]),
+      .inc_i (button_i[1]),
+      .dec_i (button_i[2]),
       .counter_o (fantasy_mode)
    );
 
