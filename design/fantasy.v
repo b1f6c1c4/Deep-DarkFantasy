@@ -129,7 +129,17 @@ module fantasy #(
       end else if (mode == 4) begin // Shift and dim
          inv_en_rrr = 0;
          if (px_C_rrr < 89) begin // 0.35
-            shift_rrr = blk_L_rrr ? 30'sd2 * $signed($signed(px_L_rrr) - 30'sd128) : 30'sd0;
+            if (blk_L_rrr) begin
+               if (px_L_rrr >= 128) begin
+                  shift_rrr = {{22{1'b0}},px_L_rrr[6:0],1'b0};
+               end else if (px_L_rrr == 127) begin
+                  shift_rrr = 0;
+               end else begin
+                  shift_rrr = {{22{1'b1}},px_L_rrr[6:0]+7'b1,1'b0};
+               end
+            end else begin
+               shift_rrr = 30'sd0;
+            end
             gain_rrr = 32768;
          end else begin
             shift_rrr = (px_L_rrr - px_C_rrr / 30'sd2) / 30'sd2;
