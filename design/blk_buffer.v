@@ -10,9 +10,6 @@ module blk_buffer #(
    input de_i,
    input [23:0] wd_i,
 
-   output [7:0] px_C_rrr_o,
-   output [7:0] px_L_rrr_o,
-
    output Y_o,
    output C_o,
    output L_o
@@ -228,34 +225,6 @@ module blk_buffer #(
 
    // Datapath: C & L
 
-   reg [23:0] rbg_r, rbg_rr;
-   reg [7:0] max_rrr, min_rrr;
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         rbg_r <= 0;
-         rbg_rr <= 0;
-         max_rrr <= 0;
-         min_rrr <= 0;
-      end else begin
-         if (wd_i[23:16] >= wd_i[15:8]) begin
-            rbg_r <= {wd_i[23:16],wd_i[15:8],wd_i[7:0]};
-         end else begin
-            rbg_r <= {wd_i[15:8],wd_i[23:16],wd_i[7:0]};
-         end
-         if (rbg_r[15:8] >= rbg_r[7:0]) begin
-            rbg_rr <= {rbg_r[23:16],rbg_r[15:8],rbg_r[7:0]};
-         end else begin
-            rbg_rr <= {rbg_r[23:16],rbg_r[7:0],rbg_r[15:8]};
-         end
-         if (rbg_rr[23:16] >= rbg_rr[15:8]) begin
-            max_rrr <= rbg_rr[23:16];
-         end else begin
-            max_rrr <= rbg_rr[15:8];
-         end
-         min_rrr <= rbg_rr[7:0];
-      end
-   end
-
    wire [23:0] ab_5c = bacc0_C;
    wire [23:0] ab_5l = bacc0_L;
    wire [47:0] ab_5 = (h_save_i && ~|cls_cnt) ? {ab_5c,ab_5l} : 0;
@@ -265,8 +234,18 @@ module blk_buffer #(
       ab_5_rr <= ab_5_r;
    end
 
-   wire [23:0] C_rrr = max_rrr - min_rrr;
-   wire [23:0] L_rrr = max_rrr + min_rrr;
+   wire [23:0] C_rrr, L_rrr;
+   cl i_cl (
+      .clk_i (clk_i),
+      .rst_ni (rst_ni),
+      .wd_i (wd_i),
+      .C_rrr_o (C_rrr[7:0]),
+      .L_rrr_o (L_rrr[8:1]),
+      .Lex_rrr_o (L_rrr[0])
+   );
+   assign C_rrr[23:8] = 0;
+   assign L_rrr[23:9] = 0;
+
    DSP48E1 #(
       .OPMODEREG (1),
       .AREG (2),
@@ -369,9 +348,6 @@ module blk_buffer #(
    end
 
    // Datapath: Final Outputs
-
-   assign px_C_rrr_o = C_rrr[7:0];
-   assign px_L_rrr_o = L_rrr[8:1];
 
    assign Y_o = lbuf_Y_r[0];
    assign C_o = lbuf_C_r[0];

@@ -58,7 +58,6 @@ module fantasy #(
    );
 
    // Blk mode
-   wire [7:0] px_C_rrr, px_L_rrr;
    wire blk_Y, blk_C, blk_L;
    blk_buffer #(
       .HBLKS (HBLKS),
@@ -71,9 +70,6 @@ module fantasy #(
       .v_save_i (v_save),
       .de_i (vin_de_i),
       .wd_i (vin_data_i),
-
-      .px_C_rrr_o (px_C_rrr),
-      .px_L_rrr_o (px_L_rrr),
 
       .Y_o (blk_Y),
       .C_o (blk_C),
@@ -103,6 +99,17 @@ module fantasy #(
 
       .mode_i (mode_i),
       .mode_o (mode)
+   );
+
+   // CL calucation
+   wire [7:0] px_C_rrr, px_L_rrr;
+   cl i_cl (
+      .clk_i (vin_clk_i),
+      .rst_ni (rst_ni),
+      .wd_i (vout_data_i),
+      .C_rrr_o (px_C_rrr),
+      .L_rrr_o (px_L_rrr),
+      .Lex_rrr_o ()
    );
 
    // Parameters
