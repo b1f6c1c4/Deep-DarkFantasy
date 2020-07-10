@@ -369,7 +369,7 @@ set_property -dict [ list \
     CONFIG.PCW_SMC_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_SPI_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64} \
-    CONFIG.PCW_S_AXI_HP1_DATA_WIDTH {32} \
+    CONFIG.PCW_S_AXI_HP1_DATA_WIDTH {64} \
     CONFIG.PCW_TPIU_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_UART1_GRP_FULL_ENABLE {0} \
     CONFIG.PCW_UART1_PERIPHERAL_ENABLE {0} \
@@ -405,13 +405,14 @@ set_property -dict [ list \
     CONFIG.PCW_USB_RESET_SELECT {<Select>} \
     CONFIG.PCW_USE_M_AXI_GP0 {0} \
     CONFIG.PCW_USE_S_AXI_HP0 {1} \
-    CONFIG.PCW_USE_S_AXI_HP1 {0} \
+    CONFIG.PCW_USE_S_AXI_HP1 {1} \
     ] $processing_system7_0
 
 connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
 connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
 
 connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK]
+connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/S_AXI_HP1_ACLK]
 
 save_bd_design
 

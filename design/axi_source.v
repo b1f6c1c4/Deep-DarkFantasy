@@ -54,7 +54,7 @@ module axi_source #(
    end
 
    wire rfval, rfrdy;
-   wire [23:0] rfdata;
+   wire [WIDTH-1:0] rfdata;
    repacker #(
       .IN (8),
       .OUT (WIDTH / 8),
@@ -73,7 +73,7 @@ module axi_source #(
 
    rfifo #(
       .WLEN (7),
-      .DEPTH (24),
+      .DEPTH (WIDTH),
       .BURST_LEN (1)
    ) i_rfifo (
       .clk_i (clk_i),
