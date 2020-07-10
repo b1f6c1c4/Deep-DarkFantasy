@@ -66,215 +66,74 @@ module axi_delayer #(
 
    assign m_axi_aclk = clk_i;
 
-
-   // M_AXI_R -> | -> repacker -> fifo -> vout
-
-   reg rbuffed;
-   reg [63:0] rbuff;
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         rbuffed <= 0;
-         rbuff <= 0;
-      end else if (vs_rise) begin
-         rbuffed <= 0;
-      end else if (m_axi_rvalid && m_axi_rready) begin
-         rbuffed <= 1;
-         rbuff <= m_axi_rdata;
-      end else if (rbuffed && m_axi_rready) begin
-         rbuffed <= 0;
-      end
-   end
-
-   wire rfval, rfrdy;
-   wire [23:0] rfdata;
-   repacker #(
-      .IN (8),
-      .OUT (3),
-      .BUFF (32)
-   ) i_rpacker (
+   axi_sink #(
+      .WIDTH (24),
+      .SIZE (H_WIDTH * V_HEIGHT)
+   ) i_sink (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
-      .srst_i (vs_rise),
-      .in_val_i (rbuffed),
-      .in_data_i (rbuff),
-      .in_rdy_o (m_axi_rready),
-      .out_val_o (rfval),
-      .out_data_o (rfdata),
-      .out_rdy_i (rfrdy)
+
+      .en_i (wen_i),
+
+      .aval_i (vs_rise),
+      .addr_i (bs ? ABASE : BBASE),
+      .val_i (de_i),
+      .data_i (data_i),
+
+      .m_axi_awready (m_axi_awready),
+      .m_axi_bvalid (m_axi_bvalid),
+      .m_axi_wready (m_axi_wready),
+      .m_axi_bresp (m_axi_bresp),
+      .m_axi_bid (m_axi_bid),
+      .m_axi_awvalid (m_axi_awvalid),
+      .m_axi_bready (m_axi_bready),
+      .m_axi_wlast (m_axi_wlast),
+      .m_axi_wvalid (m_axi_wvalid),
+      .m_axi_awburst (m_axi_awburst),
+      .m_axi_awlock (m_axi_awlock),
+      .m_axi_awsize (m_axi_awsize),
+      .m_axi_awprot (m_axi_awprot),
+      .m_axi_awaddr (m_axi_awaddr),
+      .m_axi_awcache (m_axi_awcache),
+      .m_axi_awlen (m_axi_awlen),
+      .m_axi_awqos (m_axi_awqos),
+      .m_axi_awid (m_axi_awid),
+      .m_axi_wid (m_axi_wid),
+      .m_axi_wdata (m_axi_wdata),
+      .m_axi_wstrb (m_axi_wstrb)
    );
 
-   rfifo #(
-      .WLEN (7),
-      .DEPTH (24),
-      .BURST_LEN (1)
-   ) i_rfifo (
+   axi_source #(
+      .WIDTH (24),
+      .SIZE (H_WIDTH * V_HEIGHT)
+   ) i_source (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
-      .srst_i (vs_rise),
-      .in_val_i (rfval),
-      .in_data_i (rfdata),
-      .in_rdy_o (rfrdy),
-      .out_incr_i (de_i),
-      .out_data_o (data_o)
+
+      .en_i (ren_i),
+
+      .aval_i (vs_rise),
+      .addr_i (bs ? BBASE : ABASE),
+      .rdy_i (de_i),
+      .data_o (data_o),
+
+      .m_axi_arready (m_axi_arready),
+      .m_axi_rlast (m_axi_rlast),
+      .m_axi_rvalid (m_axi_rvalid),
+      .m_axi_rresp (m_axi_rresp),
+      .m_axi_rid (m_axi_rid),
+      .m_axi_rdata (m_axi_rdata),
+      .m_axi_arvalid (m_axi_arvalid),
+      .m_axi_rready (m_axi_rready),
+      .m_axi_arburst (m_axi_arburst),
+      .m_axi_arlock (m_axi_arlock),
+      .m_axi_arsize (m_axi_arsize),
+      .m_axi_arprot (m_axi_arprot),
+      .m_axi_araddr (m_axi_araddr),
+      .m_axi_arcache (m_axi_arcache),
+      .m_axi_arlen (m_axi_arlen),
+      .m_axi_arqos (m_axi_arqos),
+      .m_axi_arid (m_axi_arid)
    );
-
-   reg arval;
-   reg [31:0] raddr, rladdr;
-   wire rglast = raddr == rladdr;
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         raddr <= ABASE;
-         rladdr <= ABASE + SIZE - 16 * 8;
-      end else if (vs_rise) begin
-         raddr <= bs ? ABASE : BBASE;
-         rladdr <= (bs ? ABASE : BBASE) + SIZE - 16 * 8;
-      end else if (arval && m_axi_arready) begin
-         raddr <= raddr + 16 * 8;
-      end
-   end
-
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         arval <= 0;
-      end else if (vs_rise && ren_i) begin
-         arval <= 1;
-      end else if (arval && m_axi_arready) begin
-         arval <= ~rglast && ren_i;
-      end
-   end
-
-   assign m_axi_arvalid = arval;
-   assign m_axi_arburst = 2'b01; // INCR
-   assign m_axi_arlock = 0;
-   assign m_axi_arsize = 3'b011; // 8 bytes each transfer
-   assign m_axi_arprot = 0;
-   assign m_axi_araddr = raddr;
-   assign m_axi_arcache = 0;
-   assign m_axi_arlen = 4'b1111; // 16 transfers each
-   assign m_axi_arqos = 0;
-   assign m_axi_arid = 0;
-
-   // assign m_axi_rready;
-
-
-   // vin -> repacker -> fifo -> | -> M_AXI_W
-
-   wire wde;
-   wire [63:0] wd;
-   repacker #(
-      .IN (3),
-      .OUT (8),
-      .BUFF (32)
-   ) i_wpacker (
-      .clk_i (clk_i),
-      .rst_ni (rst_ni),
-      .srst_i (vs_rise),
-      .in_val_i (de_i),
-      .in_data_i (data_i),
-      .in_rdy_o (),
-      .out_val_o (wde),
-      .out_data_o (wd),
-      .out_rdy_i (1)
-   );
-
-   wire fifo_valid;
-   reg wde2;
-   wire [63:0] wd2;
-   wfifo #(
-      .WLEN (6),
-      .DEPTH (64),
-      .BURST_LEN (16)
-   ) i_wfifo (
-      .clk_i (clk_i),
-      .rst_ni (rst_ni),
-      .srst_i (vs_rise),
-      .in_incr_i (wde),
-      .in_data_i (wd),
-      .out_val_o (fifo_valid),
-      .out_data_o (wd2),
-      .out_incr_i (wde2)
-   );
-
-   reg awval, wemit;
-   reg [31:0] waddr, wladdr;
-   reg wglast;
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         waddr <= BBASE;
-         wladdr <= BBASE + SIZE - 16 * 8;
-         wglast <= 0;
-      end else if (vs_rise) begin
-         waddr <= bs ? BBASE : ABASE;
-         wladdr <= (bs ? BBASE : ABASE) + SIZE - 16 * 8;
-         wglast <= 0;
-      end else if (awval && m_axi_awready) begin
-         waddr <= waddr + 16 * 8;
-         wglast <= waddr == wladdr;
-      end
-   end
-
-   always @(*) begin
-      wde2 = 0;
-      if (vs_rise) begin
-         wde2 = 0;
-      end else if ((~m_axi_wvalid || m_axi_wlast) && fifo_valid && ~wglast && wen_i) begin
-         wde2 = 1;
-      end else if (m_axi_wvalid && m_axi_wready && ~m_axi_wlast) begin
-         wde2 = 1;
-      end
-   end
-
-   reg [63:0] wbuff;
-   reg [3:0] wcnt;
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         awval <= 0;
-         wemit <= 0;
-         wcnt <= 0;
-         wbuff <= 0;
-      end else if (vs_rise) begin
-         awval <= 0;
-         wemit <= 0;
-         wcnt <= 0;
-      end else if (awval && m_axi_awready) begin
-         awval <= 0;
-         wcnt <= 0;
-         if (wemit) begin
-            wcnt <= wcnt + 1;
-            wbuff <= wd2;
-         end
-      end else if ((~wemit || &wcnt) && fifo_valid && ~wglast && wen_i) begin
-         awval <= 1;
-         wemit <= 1;
-         wcnt <= 0;
-         wbuff <= wd2;
-      end else if (wemit && m_axi_wready && m_axi_wlast) begin
-         wemit <= 0;
-         wcnt <= 0;
-         wbuff <= wd2;
-      end else if (wemit && m_axi_wready) begin
-         wcnt <= wcnt + 1;
-         wbuff <= wd2;
-      end
-   end
-
-   assign m_axi_awvalid = awval;
-   assign m_axi_awburst = 2'b01; // INCR
-   assign m_axi_awlock = 0;
-   assign m_axi_awsize = 3'b011; // 8 bytes each transfer
-   assign m_axi_awprot = 0;
-   assign m_axi_awaddr = waddr;
-   assign m_axi_awcache = 0;
-   assign m_axi_awlen = 4'b1111; // 16 transfers each
-   assign m_axi_awqos = 0;
-   assign m_axi_awid = 0;
-
-   assign m_axi_wlast = &wcnt;
-   assign m_axi_wvalid = wemit;
-   assign m_axi_wdata = wbuff;
-   assign m_axi_wstrb = 8'b11111111;
-   assign m_axi_wid = 0;
-
-   assign m_axi_bready = 1;
 
 endmodule
