@@ -81,11 +81,10 @@ build/overlay/overlay.js: script/overlay/overlay.js
 	mkdir -p build/overlay/
 	cp $< $@
 
-build/overlay/config: build/overlay/overlay.js build/overlay/font_info.json
-	node $^ 2>$@ >build/overlay/rom.mem
-	cat $@
+build/overlay/rom.bin: build/overlay/overlay.js build/overlay/font_info.json
+	node $^ >$@
 
-build/post_synth.dcp: build/overlay/config
+build/post_synth.dcp: build/overlay/rom.bin
 
 constr/debug.xdc:
 	touch $@

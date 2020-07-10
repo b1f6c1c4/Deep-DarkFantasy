@@ -3,4 +3,5 @@ the_ROM_image:
 {
 	[bootloader]./build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf
 	./build/output.bit
+	[load=0x21000000] ./build/overlay/rom.bin
 }

@@ -27,12 +27,7 @@ synth_design -top top \
     -generic V_HEIGHT=$::env(V_HEIGHT) \
     -generic KH=$::env(KH) \
     -generic KV=$::env(KV) \
-    -generic SMOOTH_T=$::env(SMOOTH_T) \
-    -generic OVERLAY_WIDTH=$::env(OVERLAY_WIDTH) \
-    -generic OVERLAY_XMIN=$::env(OVERLAY_XMIN) \
-    -generic OVERLAY_XMAX=$::env(OVERLAY_XMAX) \
-    -generic OVERLAY_YMIN=$::env(OVERLAY_YMIN) \
-    -generic OVERLAY_YMAX=$::env(OVERLAY_YMAX)
+    -generic SMOOTH_T=$::env(SMOOTH_T)
 write_checkpoint -force post_synth.dcp
 report_timing_summary -file report/timing_syn.rpt
 report_utilization -file report/util_syn.rpt

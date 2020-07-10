@@ -5,12 +5,7 @@ module top #(
    parameter V_HEIGHT = 1080,
    parameter KH = 30,
    parameter KV = 30,
-   parameter SMOOTH_T = 1400,
-   parameter OVERLAY_WIDTH = 1,
-   parameter OVERLAY_XMIN = 0,
-   parameter OVERLAY_XMAX = 0,
-   parameter OVERLAY_YMIN = 0,
-   parameter OVERLAY_YMAX = 0
+   parameter SMOOTH_T = 1400
 ) (
    input clk_i,
 
@@ -239,13 +234,7 @@ module top #(
 
    // Overlay
 
-   overlay #(
-      .WIDTH (OVERLAY_WIDTH),
-      .XMIN (OVERLAY_XMIN),
-      .XMAX (OVERLAY_XMAX),
-      .YMIN (OVERLAY_YMIN),
-      .YMAX (OVERLAY_YMAX)
-   ) i_overlay (
+   overlay i_overlay (
       .clk_i (clk_i),
       .rst_ni (rst_n),
       .mode_i (fantasy_mode),

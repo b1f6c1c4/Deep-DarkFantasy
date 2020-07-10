@@ -40,43 +40,21 @@ async function run() {
   const yMin = Math.floor((vp - dy) / 2);
   const yMax = yMin + dy - 1;
 
-  const blks = dx * dy;
+  const blks = hp * vp;
   const arr = new Uint8Array(blks);
   glyphs.forEach((g, i) => {
-    const x0 = Math.floor((dx - g.width) / 2);
-    const y0 = -g.yMin + Math.floor((vp - (g.yMax - g.yMin)) / 2) - yMin;
+    const x0 = Math.floor((hp - g.width) / 2);
+    const y0 = -g.yMin + Math.floor((vp - (g.yMax - g.yMin)) / 2);
     for (let y = g.yMin; y <= g.yMax; y++) {
       for (let x = 0; x < g.width; x++) {
         if (!g.pixels[(y * g.width + x) * 4 + 1]) {
-          arr[(x + x0) + (y + y0) * dx] |= 1 << g.code;
+          arr[(x + x0) + (y + y0) * hp] |= 1 << g.code;
         }
       }
     }
   });
 
-  const width = Math.pow(2, Math.ceil(Math.log2(blks) - 15));
-  const words = Math.ceil(blks / width);
-  const pp = Math.pow(2, Math.ceil(Math.log2(words) - 15));
-  console.error(`# OVERLAY_PIXELS=${blks}`);
-  console.error(`# OVERLAY_WORDS=${words}`);
-  console.error(`# OVERLAY_ACTUAL=${words * 8 * width / 1024 / 1024} # Mib`);
-  console.error(`# OVERLAY_TOTAL=${pp * 8 * width} # Pieces`);
-  console.error(`# OVERLAY_UTIL=${words / (32768 * pp)}`);
-  console.error(`OVERLAY_WIDTH=${width}`);
-  console.error(`OVERLAY_XMIN=${xMin}`);
-  console.error(`OVERLAY_XMAX=${xMax}`);
-  console.error(`OVERLAY_YMIN=${yMin}`);
-  console.error(`OVERLAY_YMAX=${yMax}`);
-
-  arr.forEach((w, i) => {
-    const s = w.toString(16);
-    process.stdout.write('0'.repeat(2 - s.length) + s, 'utf-8');
-    if (i % width === width - 1) console.log();
-  });
-
-  if (blks % width) {
-    console.log('0'.repeat(2 * (width - blks % width)));
-  }
+  process.stdout.write(arr);
 }
 
 run();
