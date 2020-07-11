@@ -58,7 +58,7 @@ module fantasy #(
    );
 
    // Blk mode
-   wire blk_Y, blk_C, blk_L;
+   wire blk_Y_rrr, blk_C_rrr, blk_L_rrr;
    blk_buffer #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS),
@@ -71,18 +71,10 @@ module fantasy #(
       .de_i (vin_de_i),
       .wd_i (vin_data_i),
 
-      .Y_o (blk_Y),
-      .C_o (blk_C),
-      .L_o (blk_L)
+      .Y_rrr_o (blk_Y_rrr),
+      .C_rrr_o (blk_C_rrr),
+      .L_rrr_o (blk_L_rrr)
    );
-   reg blk_Y_r, blk_C_r, blk_L_r;
-   reg blk_Y_rr, blk_C_rr, blk_L_rr;
-   reg blk_Y_rrr, blk_C_rrr, blk_L_rrr;
-   always @(posedge vin_clk_i) begin
-      {blk_Y_r, blk_C_r, blk_L_r} <= {blk_Y, blk_C, blk_L};
-      {blk_Y_rr, blk_C_rr, blk_L_rr} <= {blk_Y_r, blk_C_r, blk_L_r};
-      {blk_Y_rrr, blk_C_rrr, blk_L_rrr} <= {blk_Y_rr, blk_C_rr, blk_L_rr};
-   end
 
    // Mode mix
    wire [2:0] mode;

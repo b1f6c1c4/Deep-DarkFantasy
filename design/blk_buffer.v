@@ -10,16 +10,19 @@ module blk_buffer #(
    input de_i,
    input [23:0] wd_i,
 
-   output Y_o,
-   output C_o,
-   output L_o
+   output Y_rrr_o,
+   output C_rrr_o,
+   output L_rrr_o
 );
    localparam Y_DEPTH = $clog2(PXS * 512 * 255 + 1);
    localparam Y_THRES = PXS * 256 * 255;
+   localparam Y_HYS = PXS * 256 * 10;
    localparam C_DEPTH = $clog2(PXS * 255 + 1);
    localparam C_THRES = PXS * 89; // 0.35 * 255
+   localparam C_HYS = PXS * 5;
    localparam L_DEPTH = $clog2(PXS * 2 * 255 + 1);
    localparam L_THRES = PXS * 256;
+   localparam L_HYS = PXS * 15;
 
    // Control
 
@@ -221,8 +224,6 @@ module blk_buffer #(
       .PATTERNDETECT (), .PATTERNBDETECT (), .OVERFLOW (), .UNDERFLOW ()
    );
 
-   wire p_4s = p_4 >= Y_THRES; // _rrrrr
-
    // Datapath: C & L
 
    wire [23:0] ab_5c = bacc0_C;
@@ -281,10 +282,11 @@ module blk_buffer #(
       .PATTERNDETECT (), .PATTERNBDETECT (), .OVERFLOW (), .UNDERFLOW ()
    );
 
-   wire p_5c = p_5[47:24] >= C_THRES; // _rrrrr
-   wire p_5l = p_5[23:0] >= L_THRES; // _rrrrr
-
    // Datapath: Block Comparers
+
+   wire p_4s = p_4 >= (fb_Y_rrrrr ? Y_THRES - Y_HYS : Y_THRES + Y_HYS);
+   wire p_5c = p_5[47:24] >= (fb_C_rrrrr ? C_THRES - C_HYS : C_THRES + C_HYS);
+   wire p_5l = p_5[23:0] >= (fb_L_rrrrr ? L_THRES - L_HYS : L_THRES + L_HYS);
 
    reg [HBLKS-1:0] bt_Y, bt_C, bt_L;
    always @(posedge clk_i, negedge rst_ni) begin
@@ -349,8 +351,17 @@ module blk_buffer #(
 
    // Datapath: Final Outputs
 
-   assign Y_o = lbuf_Y_r[0];
-   assign C_o = lbuf_C_r[0];
-   assign L_o = lbuf_L_r[0];
+   reg fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr, fb_Y_rrrrr;
+   reg fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr, fb_C_rrrrr;
+   reg fb_L_r, fb_L_rr, fb_L_rrr, fb_L_rrrr, fb_L_rrrrr;
+   always @(posedge clk_i) begin
+      {fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr, fb_Y_rrrrr} <= {lbuf_Y_r[0], fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr};
+      {fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr, fb_C_rrrrr} <= {lbuf_C_r[0], fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr};
+      {fb_L_r, fb_L_rr, fb_L_rrr, fb_L_rrrr, fb_L_rrrrr} <= {lbuf_L_r[0], fb_L_r, fb_L_rr, fb_L_rrr, fb_L_rrrr};
+   end
+
+   assign Y_rrr_o = fb_Y_rrr;
+   assign C_rrr_o = fb_C_rrr;
+   assign L_rrr_o = fb_L_rrr;
 
 endmodule
