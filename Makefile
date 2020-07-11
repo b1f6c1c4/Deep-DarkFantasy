@@ -84,7 +84,7 @@ build/overlay/overlay.js: script/overlay/overlay.js
 build/overlay/rom.bin: build/overlay/overlay.js build/overlay/font_info.json
 	node $^ >$@
 
-build/post_synth.dcp: build/overlay/rom.bin
+build/BOOT.bin: build/overlay/rom.bin
 
 constr/debug.xdc:
 	touch $@

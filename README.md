@@ -78,12 +78,12 @@ V_HEIGHT=1080
 FREQ=148.50
 
 # Dark-Fantasy parameters
-KH=30 # Block width (px)
-KV=30 # Block height (px)
-SMOOTH_T=1400 # Smoothing time (ms)
+KH=24 # Block width (px)
+KV=24 # Block height (px)
+SMOOTH_T=1200 # Smoothing time (ms)
 
 # Overlay parameters
-FONT_SZ=631 # (px)
+FONT_SZ=768 # (px)
 ```
 
 ### Step 2: Configure the video parameters
