@@ -1,2 +1,3 @@
 vivado-library/**/* linguist-vendored
 ip/* linguist-vendored
+*.v linguist-language=Verilog
