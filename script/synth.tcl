@@ -20,7 +20,7 @@ set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*/*/*/*.xdc
 
 set VIN_FREQ $::env(FREQ)
 read_xdc [glob ../constr/timing.xdc]
-synth_design -top top \
+synth_design -top deep \
     -generic H_WIDTH=$::env(H_WIDTH) \
     -generic H_START=$::env(H_START) \
     -generic H_TOTAL=$::env(H_TOTAL) \

@@ -107,7 +107,7 @@ The first way is usually easier, but here are are explaining the second way.
           v: height 1080 start 1084 end 1089 total 1125           clock  60.00Hz
     ```
     Now you should know where does those magic numbers came from.
-    Edit the parameters in `design/top.v` and `constr/ax7z100.xdc` to match the numbers from `xrandr`.
+    Edit the parameters in `config` to match the numbers from `xrandr`.
 
     Note: If you have multiple displays, pick the one you want to use *Deep:* Dark-Fantasy.
     You need one FPGA develop board *per display* if you want all your displays to be Dark-Fantasy.

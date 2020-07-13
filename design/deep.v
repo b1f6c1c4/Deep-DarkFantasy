@@ -1,4 +1,4 @@
-module top #(
+module deep #(
    parameter H_WIDTH  = 1920,
    parameter H_START  = 2008,
    parameter H_TOTAL  = 2200,
@@ -78,86 +78,13 @@ module top #(
       .counter_o (fantasy_mode)
    );
 
-   assign hdmi_in_hpd_o = hdmi_out_hpd_i || sw_i[3];
-
-   // HDMI in
-
-   wire hdmi_in_ddc_scl_i, hdmi_in_ddc_scl_o, hdmi_in_ddc_scl_t;
-   wire hdmi_in_ddc_sda_i, hdmi_in_ddc_sda_o, hdmi_in_ddc_sda_t;
-   IOBUF i_hdmi_in_ddc_scl_iobuf (
-      .IO(hdmi_in_ddc_scl_io),
-      .I(hdmi_in_ddc_scl_o),
-      .O(hdmi_in_ddc_scl_i),
-      .T(hdmi_in_ddc_scl_t)
-   );
-   IOBUF i_hdmi_in_ddc_sda_iobuf (
-      .IO(hdmi_in_ddc_sda_io),
-      .I(hdmi_in_ddc_sda_o),
-      .O(hdmi_in_ddc_sda_i),
-      .T(hdmi_in_ddc_sda_t)
-   );
-
-   wire vin_clk, vin_rst_n;
-   wire vin_hs, vin_vs, vin_de;
-   wire [23:0] vin_data;
-   dvi2rgb_1080p i_dvi2rgb (
-      .RefClk(clk_ref),
-      .aRst_n(rst_ref_n),
-      .pRst_n(1'b1),
-      .PixelClk(vin_clk),
-      .aPixelClkLckd(), // DEPRECATED
-      .pLocked(vin_rst_n),
-
-      .TMDS_Clk_n(hdmi_in_clk_n),
-      .TMDS_Clk_p(hdmi_in_clk_p),
-      .TMDS_Data_n(hdmi_in_data_n),
-      .TMDS_Data_p(hdmi_in_data_p),
-
-      .SCL_I(hdmi_in_ddc_scl_i),
-      .SCL_O(hdmi_in_ddc_scl_o),
-      .SCL_T(hdmi_in_ddc_scl_t),
-      .SDA_I(hdmi_in_ddc_sda_i),
-      .SDA_O(hdmi_in_ddc_sda_o),
-      .SDA_T(hdmi_in_ddc_sda_t),
-
-      .vid_pData(vin_data),
-      .vid_pHSync(vin_hs),
-      .vid_pVSync(vin_vs),
-      .vid_pVDE(vin_de)
-   );
-
    // LED monitor
-
-   reg [31:0] vin_clk_c;
-   always @(posedge vin_clk) begin
-      vin_clk_c <= vin_clk_c + 1;
-   end
 
    assign led_o[0] = fantasy_mode[0];
    assign led_o[1] = fantasy_mode[1];
    assign led_o[2] = fantasy_mode[2];
-   assign led_o[3] = vin_clk_c[26];
 
-   // HDMI out
-
-   wire vout_hs, vout_vs, vout_de;
-   wire [23:0] vout_data;
-   rgb2dvi_1080p i_rgb2dvi (
-      .PixelClk(vin_clk),
-      .aRst_n(vin_rst_n),
-
-      .TMDS_Clk_n(hdmi_out_clk_n),
-      .TMDS_Clk_p(hdmi_out_clk_p),
-      .TMDS_Data_n(hdmi_out_data_n),
-      .TMDS_Data_p(hdmi_out_data_p),
-
-      .vid_pData(vout_data),
-      .vid_pHSync(vout_hs),
-      .vid_pVDE(vout_de),
-      .vid_pVSync(vout_vs)
-   );
-
-   // Process
+   // Memory
 
    wire AXI0_ARREADY, AXI1_ARREADY;
    wire AXI0_AWREADY, AXI1_AWREADY;
@@ -209,147 +136,6 @@ module top #(
    assign AXI1_RDISSUECAP1_EN = 0;
    assign AXI0_WRISSUECAP1_EN = 0;
    assign AXI1_WRISSUECAP1_EN = 0;
-
-   wire [23:0] mid_data, fan_data;
-
-   fantasy #(
-      .H_WIDTH (H_WIDTH),
-      .H_START (H_START),
-      .H_TOTAL (H_TOTAL),
-      .V_HEIGHT (V_HEIGHT),
-      .KH (KH),
-      .KV (KV),
-      .SMOOTH_T (SMOOTH_T)
-   ) i_fantasy (
-      .rst_ni (rst_n),
-      .mode_i (fantasy_mode),
-
-      .vin_clk_i (vin_clk),
-      .vin_hs_i (vin_hs),
-      .vin_vs_i (vin_vs),
-      .vin_de_i (vin_de),
-      .vin_data_i (vin_data),
-
-      .vout_data_i (sw_i[2] ? vin_data : mid_data),
-      .vout_hs_o (vout_hs),
-      .vout_vs_o (vout_vs),
-      .vout_de_o (vout_de),
-      .vout_data_o (fan_data)
-   );
-
-   // Overlay
-
-   overlay #(
-      .H_WIDTH (H_WIDTH),
-      .V_HEIGHT (V_HEIGHT)
-   ) i_overlay (
-      .clk_i (clk_i),
-      .rst_ni (rst_n),
-      .mode_i (fantasy_mode),
-
-      .vin_clk_i (vin_clk),
-      .vin_vs_i (vin_vs),
-      .vin_de_i (vin_de),
-
-      .data_i (fan_data),
-      .data_o (vout_data),
-
-      .m_axi_arready (AXI1_ARREADY),
-      .m_axi_awready (AXI1_AWREADY),
-      .m_axi_bvalid (AXI1_BVALID),
-      .m_axi_rlast (AXI1_RLAST),
-      .m_axi_rvalid (AXI1_RVALID),
-      .m_axi_wready (AXI1_WREADY),
-      .m_axi_bresp (AXI1_BRESP),
-      .m_axi_rresp (AXI1_RRESP),
-      .m_axi_bid (AXI1_BID),
-      .m_axi_rid (AXI1_RID),
-      .m_axi_rdata (AXI1_RDATA),
-      .m_axi_aclk (AXI1_ACLK),
-      .m_axi_arvalid (AXI1_ARVALID),
-      .m_axi_awvalid (AXI1_AWVALID),
-      .m_axi_bready (AXI1_BREADY),
-      .m_axi_rready (AXI1_RREADY),
-      .m_axi_wlast (AXI1_WLAST),
-      .m_axi_wvalid (AXI1_WVALID),
-      .m_axi_arburst (AXI1_ARBURST),
-      .m_axi_arlock (AXI1_ARLOCK),
-      .m_axi_arsize (AXI1_ARSIZE),
-      .m_axi_awburst (AXI1_AWBURST),
-      .m_axi_awlock (AXI1_AWLOCK),
-      .m_axi_awsize (AXI1_AWSIZE),
-      .m_axi_arprot (AXI1_ARPROT),
-      .m_axi_awprot (AXI1_AWPROT),
-      .m_axi_araddr (AXI1_ARADDR),
-      .m_axi_awaddr (AXI1_AWADDR),
-      .m_axi_arcache (AXI1_ARCACHE),
-      .m_axi_arlen (AXI1_ARLEN),
-      .m_axi_arqos (AXI1_ARQOS),
-      .m_axi_awcache (AXI1_AWCACHE),
-      .m_axi_awlen (AXI1_AWLEN),
-      .m_axi_awqos (AXI1_AWQOS),
-      .m_axi_arid (AXI1_ARID),
-      .m_axi_awid (AXI1_AWID),
-      .m_axi_wid (AXI1_WID),
-      .m_axi_wdata (AXI1_WDATA),
-      .m_axi_wstrb (AXI1_WSTRB)
-   );
-
-   // Delayer
-
-   axi_delayer #(
-      .H_WIDTH (H_WIDTH),
-      .V_HEIGHT (V_HEIGHT)
-   ) i_axi_delayer (
-      .clk_i (vin_clk),
-      .rst_ni (rst_n),
-      .ren_i (~sw_i[2]),
-      .wen_i (~sw_i[3]),
-      .vs_i (vin_vs),
-      .de_i (vin_de),
-      .data_i (vin_data),
-      .data_o (mid_data),
-
-      .m_axi_arready (AXI0_ARREADY),
-      .m_axi_awready (AXI0_AWREADY),
-      .m_axi_bvalid (AXI0_BVALID),
-      .m_axi_rlast (AXI0_RLAST),
-      .m_axi_rvalid (AXI0_RVALID),
-      .m_axi_wready (AXI0_WREADY),
-      .m_axi_bresp (AXI0_BRESP),
-      .m_axi_rresp (AXI0_RRESP),
-      .m_axi_bid (AXI0_BID),
-      .m_axi_rid (AXI0_RID),
-      .m_axi_rdata (AXI0_RDATA),
-      .m_axi_aclk (AXI0_ACLK),
-      .m_axi_arvalid (AXI0_ARVALID),
-      .m_axi_awvalid (AXI0_AWVALID),
-      .m_axi_bready (AXI0_BREADY),
-      .m_axi_rready (AXI0_RREADY),
-      .m_axi_wlast (AXI0_WLAST),
-      .m_axi_wvalid (AXI0_WVALID),
-      .m_axi_arburst (AXI0_ARBURST),
-      .m_axi_arlock (AXI0_ARLOCK),
-      .m_axi_arsize (AXI0_ARSIZE),
-      .m_axi_awburst (AXI0_AWBURST),
-      .m_axi_awlock (AXI0_AWLOCK),
-      .m_axi_awsize (AXI0_AWSIZE),
-      .m_axi_arprot (AXI0_ARPROT),
-      .m_axi_awprot (AXI0_AWPROT),
-      .m_axi_araddr (AXI0_ARADDR),
-      .m_axi_awaddr (AXI0_AWADDR),
-      .m_axi_arcache (AXI0_ARCACHE),
-      .m_axi_arlen (AXI0_ARLEN),
-      .m_axi_arqos (AXI0_ARQOS),
-      .m_axi_awcache (AXI0_AWCACHE),
-      .m_axi_awlen (AXI0_AWLEN),
-      .m_axi_awqos (AXI0_AWQOS),
-      .m_axi_arid (AXI0_ARID),
-      .m_axi_awid (AXI0_AWID),
-      .m_axi_wid (AXI0_WID),
-      .m_axi_wdata (AXI0_WDATA),
-      .m_axi_wstrb (AXI0_WSTRB)
-   );
 
    processing_system7_0 i_ps (
       .S_AXI_HP0_ARREADY (AXI0_ARREADY),
@@ -465,6 +251,123 @@ module top #(
       .PS_SRSTB (PS_SRSTB),
       .PS_CLK (PS_CLK),
       .PS_PORB (PS_PORB)
+   );
+
+   // Core
+
+   dark #(
+      .H_WIDTH (H_WIDTH),
+      .H_START (H_START),
+      .H_TOTAL (H_TOTAL),
+      .V_HEIGHT (V_HEIGHT),
+      .KH (KH),
+      .KV (KV),
+      .SMOOTH_T (SMOOTH_T),
+      .BASE (32'h20000000)
+   ) i_dark_0 (
+      .clk_ref_i (clk_ref),
+      .rst_ref_ni (rst_ref_n),
+
+      .clk_i (clk_i),
+      .rst_ni (rst_n),
+      .ren_i (~sw_i[2]),
+      .wen_i (~sw_i[3]),
+      .mode_i (fantasy_mode),
+      .led_o (led_o[3]),
+
+      .hdmi_in_hpd_o (hdmi_in_hpd_o),
+      .hdmi_in_ddc_scl_io (hdmi_in_ddc_scl_io),
+      .hdmi_in_ddc_sda_io (hdmi_in_ddc_sda_io),
+      .hdmi_in_clk_n (hdmi_in_clk_n),
+      .hdmi_in_clk_p (hdmi_in_clk_p),
+      .hdmi_in_data_n (hdmi_in_data_n),
+      .hdmi_in_data_p (hdmi_in_data_p),
+
+      .hdmi_out_hpd_i (hdmi_out_hpd_i),
+      .hdmi_out_clk_n (hdmi_out_clk_n),
+      .hdmi_out_clk_p (hdmi_out_clk_p),
+      .hdmi_out_data_n (hdmi_out_data_n),
+      .hdmi_out_data_p (hdmi_out_data_p),
+
+      .m_axi0_arready (AXI0_ARREADY),
+      .m_axi0_awready (AXI0_AWREADY),
+      .m_axi0_bvalid (AXI0_BVALID),
+      .m_axi0_rlast (AXI0_RLAST),
+      .m_axi0_rvalid (AXI0_RVALID),
+      .m_axi0_wready (AXI0_WREADY),
+      .m_axi0_bresp (AXI0_BRESP),
+      .m_axi0_rresp (AXI0_RRESP),
+      .m_axi0_rdata (AXI0_RDATA),
+      .m_axi0_bid (AXI0_BID),
+      .m_axi0_rid (AXI0_RID),
+      .m_axi0_aclk (AXI0_ACLK),
+      .m_axi0_arvalid (AXI0_ARVALID),
+      .m_axi0_awvalid (AXI0_AWVALID),
+      .m_axi0_bready (AXI0_BREADY),
+      .m_axi0_rready (AXI0_RREADY),
+      .m_axi0_wlast (AXI0_WLAST),
+      .m_axi0_wvalid (AXI0_WVALID),
+      .m_axi0_arburst (AXI0_ARBURST),
+      .m_axi0_arlock (AXI0_ARLOCK),
+      .m_axi0_arsize (AXI0_ARSIZE),
+      .m_axi0_awburst (AXI0_AWBURST),
+      .m_axi0_awlock (AXI0_AWLOCK),
+      .m_axi0_awsize (AXI0_AWSIZE),
+      .m_axi0_arprot (AXI0_ARPROT),
+      .m_axi0_awprot (AXI0_AWPROT),
+      .m_axi0_araddr (AXI0_ARADDR),
+      .m_axi0_awaddr (AXI0_AWADDR),
+      .m_axi0_wdata (AXI0_WDATA),
+      .m_axi0_arcache (AXI0_ARCACHE),
+      .m_axi0_arlen (AXI0_ARLEN),
+      .m_axi0_arqos (AXI0_ARQOS),
+      .m_axi0_awcache (AXI0_AWCACHE),
+      .m_axi0_awlen (AXI0_AWLEN),
+      .m_axi0_awqos (AXI0_AWQOS),
+      .m_axi0_wstrb (AXI0_WSTRB),
+      .m_axi0_arid (AXI0_ARID),
+      .m_axi0_awid (AXI0_AWID),
+      .m_axi0_wid (AXI0_WID),
+
+      .m_axi1_arready (AXI1_ARREADY),
+      .m_axi1_awready (AXI1_AWREADY),
+      .m_axi1_bvalid (AXI1_BVALID),
+      .m_axi1_rlast (AXI1_RLAST),
+      .m_axi1_rvalid (AXI1_RVALID),
+      .m_axi1_wready (AXI1_WREADY),
+      .m_axi1_bresp (AXI1_BRESP),
+      .m_axi1_rresp (AXI1_RRESP),
+      .m_axi1_rdata (AXI1_RDATA),
+      .m_axi1_bid (AXI1_BID),
+      .m_axi1_rid (AXI1_RID),
+      .m_axi1_aclk (AXI1_ACLK),
+      .m_axi1_arvalid (AXI1_ARVALID),
+      .m_axi1_awvalid (AXI1_AWVALID),
+      .m_axi1_bready (AXI1_BREADY),
+      .m_axi1_rready (AXI1_RREADY),
+      .m_axi1_wlast (AXI1_WLAST),
+      .m_axi1_wvalid (AXI1_WVALID),
+      .m_axi1_arburst (AXI1_ARBURST),
+      .m_axi1_arlock (AXI1_ARLOCK),
+      .m_axi1_arsize (AXI1_ARSIZE),
+      .m_axi1_awburst (AXI1_AWBURST),
+      .m_axi1_awlock (AXI1_AWLOCK),
+      .m_axi1_awsize (AXI1_AWSIZE),
+      .m_axi1_arprot (AXI1_ARPROT),
+      .m_axi1_awprot (AXI1_AWPROT),
+      .m_axi1_araddr (AXI1_ARADDR),
+      .m_axi1_awaddr (AXI1_AWADDR),
+      .m_axi1_wdata (AXI1_WDATA),
+      .m_axi1_arcache (AXI1_ARCACHE),
+      .m_axi1_arlen (AXI1_ARLEN),
+      .m_axi1_arqos (AXI1_ARQOS),
+      .m_axi1_awcache (AXI1_AWCACHE),
+      .m_axi1_awlen (AXI1_AWLEN),
+      .m_axi1_awqos (AXI1_AWQOS),
+      .m_axi1_wstrb (AXI1_WSTRB),
+      .m_axi1_arid (AXI1_ARID),
+      .m_axi1_awid (AXI1_AWID),
+      .m_axi1_wid (AXI1_WID)
    );
 
 endmodule

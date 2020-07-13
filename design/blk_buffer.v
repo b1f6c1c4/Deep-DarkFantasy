@@ -284,6 +284,10 @@ module blk_buffer #(
 
    // Datapath: Block Comparers
 
+   reg fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr, fb_Y_rrrrr;
+   reg fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr, fb_C_rrrrr;
+   reg fb_L_r, fb_L_rr, fb_L_rrr, fb_L_rrrr, fb_L_rrrrr;
+
    wire p_4s = p_4 >= (fb_Y_rrrrr ? Y_THRES - Y_HYS : Y_THRES + Y_HYS);
    wire p_5c = p_5[47:24] >= (fb_C_rrrrr ? C_THRES - C_HYS : C_THRES + C_HYS);
    wire p_5l = p_5[23:0] >= (fb_L_rrrrr ? L_THRES - L_HYS : L_THRES + L_HYS);
@@ -351,9 +355,6 @@ module blk_buffer #(
 
    // Datapath: Final Outputs
 
-   reg fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr, fb_Y_rrrrr;
-   reg fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr, fb_C_rrrrr;
-   reg fb_L_r, fb_L_rr, fb_L_rrr, fb_L_rrrr, fb_L_rrrrr;
    always @(posedge clk_i) begin
       {fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr, fb_Y_rrrrr} <= {lbuf_Y_r[0], fb_Y_r, fb_Y_rr, fb_Y_rrr, fb_Y_rrrr};
       {fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr, fb_C_rrrrr} <= {lbuf_C_r[0], fb_C_r, fb_C_rr, fb_C_rrr, fb_C_rrrr};

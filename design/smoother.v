@@ -39,17 +39,17 @@ module smoother #(
       end
    endgenerate
 
-   wire [$clog2(PHASE)-1:0] h_rel = ht_cur_i - HBLKS / 2;
-   wire [$clog2(PHASE)-1:0] v_rel = vt_cur_i - VBLKS / 2;
-   wire [$clog2(PHASE)-1:0] h_rel_a = h_rel[$clog2(PHASE)-1] ? -h_rel : h_rel;
-   wire [$clog2(PHASE)-1:0] v_rel_a = v_rel[$clog2(PHASE)-1] ? -v_rel : v_rel;
+   wire [$clog2(PHASE)-1:0] h_rel = ht_cur_i < HBLKS / 2
+      ? HBLKS / 2 - ht_cur_i - 1 : ht_cur_i - HBLKS / 2;
+   wire [$clog2(PHASE)-1:0] v_rel = vt_cur_i < VBLKS / 2
+      ? VBLKS / 2 - vt_cur_i - 1 : vt_cur_i - VBLKS / 2;
 
    reg [$clog2(PHASE)-1:0] rel_r;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          rel_r <= PHASE - 1;
       end else begin
-         rel_r <= h_rel_a + v_rel_a;
+         rel_r <= h_rel + v_rel;
       end
    end
 
