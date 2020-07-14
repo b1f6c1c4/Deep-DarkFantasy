@@ -77,7 +77,7 @@ module fantasy #(
    );
 
    // Mode mix
-   wire [2:0] mode;
+   wire [2:0] mode_rrr;
    smoother #(
       .HBLKS (HBLKS),
       .VBLKS (VBLKS),
@@ -90,7 +90,7 @@ module fantasy #(
       .vt_cur_i (vt_cur),
 
       .mode_i (mode_i),
-      .mode_o (mode)
+      .mode_o (mode_rrr)
    );
 
    // CL calucation
@@ -109,23 +109,23 @@ module fantasy #(
    reg [29:0] shift_rrr;
    reg [17:0] gain_rrr;
    always @(*) begin
-      if (mode == 0) begin // Inv
+      if (mode_rrr == 0) begin // Inv
          inv_en_rrr = 1;
          shift_rrr = 0;
          gain_rrr = 32768;
-      end else if (mode == 1) begin // Inv and dim
+      end else if (mode_rrr == 1) begin // Inv and dim
          inv_en_rrr = 1;
          shift_rrr = 0;
          gain_rrr = 21845;
-      end else if (mode == 2) begin // Y-based Inv
+      end else if (mode_rrr == 2) begin // Y-based Inv
          inv_en_rrr = blk_Y_rrr;
          shift_rrr = 0;
          gain_rrr = 32768;
-      end else if (mode == 3) begin // Inv or dim
+      end else if (mode_rrr == 3) begin // Inv or dim
          inv_en_rrr = ~blk_C_rrr && blk_Y_rrr;
          shift_rrr = 0;
          gain_rrr = ~blk_C_rrr ? 32768 : 16384;
-      end else if (mode == 4) begin // Shift and dim
+      end else if (mode_rrr == 4) begin // Shift and dim
          inv_en_rrr = 0;
          if (px_C_rrr < 89) begin // 0.35
             if (blk_L_rrr) begin
@@ -144,11 +144,11 @@ module fantasy #(
             shift_rrr = (px_L_rrr - px_C_rrr / 30'sd2) / 30'sd2;
             gain_rrr = ~blk_L_rrr ? 32768 : 21845;
          end
-      end else if (mode == 5) begin // Dim
+      end else if (mode_rrr == 5) begin // Dim
          inv_en_rrr = 0;
          shift_rrr = 0;
          gain_rrr = 13763;
-      end else if (mode == 6) begin // Dim
+      end else if (mode_rrr == 6) begin // Dim
          inv_en_rrr = 0;
          shift_rrr = 0;
          gain_rrr = 21845;
