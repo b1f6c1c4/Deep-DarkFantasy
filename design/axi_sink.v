@@ -45,8 +45,7 @@ module axi_sink #(
    wire [63:0] wd;
    repacker #(
       .IN (WIDTH / 8),
-      .OUT (8),
-      .BUFF (32)
+      .OUT (8)
    ) i_wpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),

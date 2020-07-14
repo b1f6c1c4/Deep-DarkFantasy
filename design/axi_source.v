@@ -57,8 +57,7 @@ module axi_source #(
    wire [WIDTH-1:0] rfdata;
    repacker #(
       .IN (8),
-      .OUT (WIDTH / 8),
-      .BUFF (32)
+      .OUT (WIDTH / 8)
    ) i_rpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),

@@ -1,7 +1,6 @@
 module repacker #(
    parameter IN = 3,
    parameter OUT = 8,
-   parameter BUFF = 24,
    parameter W = 8
 ) (
    input clk_i,
@@ -16,13 +15,15 @@ module repacker #(
    output [W*OUT-1:0] out_data_o,
    input out_rdy_i
 );
+   localparam BUFF = IN + OUT - 1;
 
    wire push = in_val_i && in_rdy_o;
    wire pop = out_val_o && out_rdy_i;
 
    reg [$clog2(BUFF+IN+1)-1:0] v;
+
+   assign in_rdy_o = pop ? v + IN <= BUFF + OUT : v + IN <= BUFF;
    assign out_val_o = v >= OUT;
-   assign in_rdy_o = v + IN <= BUFF;
 
    reg [W-1:0] mem[0:BUFF-1];
    reg [W-1:0] mx[0:IN+BUFF-1];
@@ -58,7 +59,7 @@ module repacker #(
          end
       end
       for (i = 0; i < OUT; i = i + 1) begin : go
-         assign out_data_o[W*i+W-1:W*i] = mx[i];
+         assign out_data_o[W*i+W-1:W*i] = mem[i];
       end
    endgenerate
 
