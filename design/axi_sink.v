@@ -41,8 +41,8 @@ module axi_sink #(
 
    // data_i -> repacker -> fifo -> | -> M_AXI_W
 
-   wire wde;
-   wire [63:0] wd;
+   wire wfval, wfrdy;
+   wire [63:0] wfdata;
    repacker #(
       .IN (WIDTH / 8),
       .OUT (8)
@@ -53,27 +53,26 @@ module axi_sink #(
       .in_val_i (val_i),
       .in_data_i (data_i),
       .in_rdy_o (),
-      .out_val_o (wde),
-      .out_data_o (wd),
-      .out_rdy_i (1)
+      .out_val_o (wfval),
+      .out_data_o (wfdata),
+      .out_rdy_i (wfrdy)
    );
 
    wire fifo_valid;
    reg wde2;
    wire [63:0] wd2;
-   wfifo #(
-      .WLEN (6),
-      .DEPTH (64),
-      .BURST_LEN (TRANS)
+   fifo #(
+      .WIDTH (64),
+      .BURST (TRANS)
    ) i_wfifo (
       .clk_i (clk_i),
-      .rst_ni (rst_ni),
       .srst_i (aval_i),
-      .in_incr_i (wde),
-      .in_data_i (wd),
+      .in_val_i (wfval),
+      .in_data_i (wfdata),
+      .in_rdy_o (wfrdy),
       .out_val_o (fifo_valid),
       .out_data_o (wd2),
-      .out_incr_i (wde2)
+      .out_rdy_i (wde2)
    );
 
    reg awval, wemit;

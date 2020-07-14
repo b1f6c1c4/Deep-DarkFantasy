@@ -1,119 +1,101 @@
-module rfifo #(
-   parameter WLEN = 1,
-   parameter DEPTH = 1,
-   parameter BURST_LEN = 1
+module fifo #(
+   parameter WIDTH = 24,
+   parameter BURST = 0
 ) (
    input clk_i,
-   input rst_ni,
    input srst_i,
 
    input in_val_i,
-   input [DEPTH-1:0] in_data_i,
-   output reg in_rdy_o,
-
-   input out_incr_i,
-   output [DEPTH-1:0] out_data_o
-);
-   localparam LEN = 1 << WLEN;
-
-   reg [DEPTH-1:0] mem[0:LEN-1];
-   reg [WLEN-1:0] wptr, rptr;
-
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         wptr <= 0;
-         rptr <= 0;
-      end else if (srst_i) begin
-         wptr <= 0;
-         rptr <= 0;
-      end else begin
-         if (in_val_i && in_rdy_o) begin
-            wptr <= wptr + 1;
-         end
-         if (out_incr_i && (wptr != rptr)) begin
-            rptr <= rptr + 1;
-         end
-      end
-   end
-
-   always @(posedge clk_i) begin
-      if (in_val_i && in_rdy_o) begin
-         mem[wptr] <= in_data_i;
-      end
-   end
-
-   always @(*) begin
-      if (~rst_ni) begin
-         in_rdy_o = 0;
-      end else if (srst_i) begin
-         in_rdy_o = 0;
-      end else if (wptr < rptr) begin
-         in_rdy_o = rptr - wptr > BURST_LEN;
-      end else begin
-         in_rdy_o = wptr - rptr < LEN - BURST_LEN;
-      end
-   end
-
-   assign out_data_o = mem[rptr];
-
-endmodule
-
-module wfifo #(
-   parameter WLEN = 8,
-   parameter DEPTH = 8,
-   parameter BURST_LEN = 16
-) (
-   input clk_i,
-   input rst_ni,
-   input srst_i,
-
-   input in_incr_i,
-   input [DEPTH-1:0] in_data_i,
+   input [WIDTH-1:0] in_data_i,
+   output in_rdy_o,
 
    output reg out_val_o,
-   output [DEPTH-1:0] out_data_o,
-   input out_incr_i
+   output [WIDTH-1:0] out_data_o,
+   input out_rdy_i
 );
-   localparam LEN = 1 << WLEN;
 
-   reg [DEPTH-1:0] mem[0:LEN-1];
-   reg [WLEN-1:0] wptr, rptr;
+   wire full, empty, aempty;
+   wire [63:0] rdata;
+   reg rden;
 
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         wptr <= 0;
-         rptr <= 0;
-      end else if (srst_i) begin
-         wptr <= 0;
-         rptr <= 0;
-      end else begin
-         if (in_incr_i) begin
-            wptr <= wptr + 1;
-         end
-         if (out_incr_i) begin
-            rptr <= rptr + 1;
-         end
-      end
-   end
-
+   reg rbuf, rbuf_next;
    always @(posedge clk_i) begin
-      if (in_incr_i) begin
-         mem[wptr] <= in_data_i;
-      end
+      rbuf <= rbuf_next;
    end
+
+   assign in_rdy_o = ~full;
+   assign out_data_o = rdata[WIDTH-1:0];
+
+   FIFO36E1 #(
+      .ALMOST_FULL_OFFSET (1),
+      .ALMOST_EMPTY_OFFSET (BURST > 0 ? BURST - 1 : 1),
+      .EN_SYN ("TRUE"),
+      .DATA_WIDTH (WIDTH <= 8 ? 9 : WIDTH <= 16 ? 18 : WIDTH <= 32 ? 36 : 72),
+      .DO_REG (0)
+   ) inst (
+      .RST (srst_i),
+      .RSTREG (0),
+      .REGCE (0),
+
+      .WRCLK (clk_i),
+      .WREN (~srst_i && in_val_i && in_rdy_o),
+      .DI (in_data_i),
+      .DIP (0),
+      .FULL (full),
+      .ALMOSTFULL (),
+      .WRCOUNT (), .WRERR (),
+
+      .RDCLK (clk_i),
+      .RDEN (rden),
+      .DO (rdata),
+      .DOP (),
+      .EMPTY (empty),
+      .ALMOSTEMPTY (aempty),
+      .RDCOUNT (), .RDERR (),
+
+      .INJECTDBITERR (0), .INJECTSBITERR (0),
+      .DBITERR (), .SBITERR (), .ECCPARITY ()
+   );
 
    always @(*) begin
-      if (~rst_ni) begin
+      if (srst_i) begin
+         rden = 0;
          out_val_o = 0;
-      end else if (srst_i) begin
-         out_val_o = 0;
-      end else if (wptr < rptr) begin
-         out_val_o = rptr - wptr <= LEN - BURST_LEN;
+         rbuf_next = 0;
+      end else if (BURST == 0) begin
+         if (empty) begin
+            rden = 0;
+            out_val_o = rbuf;
+            rbuf_next = rbuf && ~out_rdy_i;
+         end else if (~rbuf) begin
+            rden = 1; // prefetch
+            out_val_o = 0;
+            rbuf_next = 1;
+         end else if (out_rdy_i) begin
+            rden = 1; // prefetch next
+            out_val_o = rbuf;
+            rbuf_next = 1;
+         end else begin
+            rden = 0; // keep
+            out_val_o = 1;
+            rbuf_next = 1;
+         end
       end else begin
-         out_val_o = wptr - rptr >= BURST_LEN;
+         out_val_o = ~aempty;
+         if (empty) begin
+            rden = 0;
+            rbuf_next = rbuf && ~out_rdy_i;
+         end else if (~rbuf) begin
+            rden = 1; // prefetch
+            rbuf_next = 1;
+         end else if (out_rdy_i) begin
+            rden = 1; // prefetch next
+            rbuf_next = 1;
+         end else begin
+            rden = 0; // keep
+            rbuf_next = 1;
+         end
       end
    end
-
-   assign out_data_o = mem[rptr];
 
 endmodule

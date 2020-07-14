@@ -70,19 +70,17 @@ module axi_source #(
       .out_rdy_i (rfrdy)
    );
 
-   rfifo #(
-      .WLEN (7),
-      .DEPTH (WIDTH),
-      .BURST_LEN (1)
+   fifo #(
+      .WIDTH (WIDTH)
    ) i_rfifo (
       .clk_i (clk_i),
-      .rst_ni (rst_ni),
       .srst_i (aval_i),
       .in_val_i (rfval),
       .in_data_i (rfdata),
       .in_rdy_o (rfrdy),
-      .out_incr_i (rdy_i),
-      .out_data_o (data_o)
+      .out_val_o (),
+      .out_data_o (data_o),
+      .out_rdy_i (rdy_i)
    );
 
    reg arval;
