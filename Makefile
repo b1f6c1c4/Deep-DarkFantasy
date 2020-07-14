@@ -54,10 +54,7 @@ build/post_opt.dcp: script/opt.tcl script/common.tcl build/post_synth.dcp constr
 build/post_place.dcp: script/place.tcl script/common.tcl build/post_opt.dcp constr/zybo-z7-20.xdc
 	./script/launch.sh $<
 
-build/post_route.dcp: script/route.tcl script/common.tcl build/post_place.dcp
-	./script/launch.sh $<
-
-build/output.bit: script/bitstream.tcl script/common.tcl build/post_route.dcp
+build/output.bit: script/route.tcl script/common.tcl build/post_place.dcp
 	./script/launch.sh $<
 
 build/system.hdf: script/fsbl.tcl
