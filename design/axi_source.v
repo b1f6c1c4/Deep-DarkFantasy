@@ -1,6 +1,7 @@
 module axi_source #(
    parameter WIDTH = 24, // Must be 8x
-   parameter SIZE = 128
+   parameter SIZE = 128,
+   parameter AXI = 64 // Must be 32 or 64
 ) (
    input clk_i,
    input rst_ni,
@@ -17,7 +18,7 @@ module axi_source #(
    input m_axi_rlast,
    input m_axi_rvalid,
    input [1:0] m_axi_rresp,
-   input [63:0] m_axi_rdata,
+   input [AXI-1:0] m_axi_rdata,
    input [5:0] m_axi_rid,
    output m_axi_arvalid,
    output m_axi_rready,
@@ -32,13 +33,13 @@ module axi_source #(
    output [5:0] m_axi_arid
 );
    localparam TRANS = 16;
-   localparam BATCH = 64 * TRANS;
+   localparam BATCH = AXI * TRANS;
    localparam NBATCH = (WIDTH * SIZE + BATCH - 1) / BATCH;
 
    // M_AXI_R -> | -> repacker -> fifo -> data_o
 
    reg rbuffed;
-   reg [63:0] rbuff;
+   reg [AXI-1:0] rbuff;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          rbuffed <= 0;
@@ -56,7 +57,7 @@ module axi_source #(
    wire rfval, rfrdy;
    wire [WIDTH-1:0] rfdata;
    repacker #(
-      .IN (8),
+      .IN (AXI / 8),
       .OUT (WIDTH / 8)
    ) i_rpacker (
       .clk_i (clk_i),
@@ -92,9 +93,9 @@ module axi_source #(
          rladdr <= 0;
       end else if (aval_i) begin
          raddr <= addr_i;
-         rladdr <= addr_i + (NBATCH - 1) * TRANS * 8;
+         rladdr <= addr_i + (NBATCH - 1) * TRANS * AXI / 8;
       end else if (arval && m_axi_arready) begin
-         raddr <= raddr + TRANS * 8;
+         raddr <= raddr + TRANS * AXI / 8;
       end
    end
 
@@ -118,7 +119,7 @@ module axi_source #(
    assign m_axi_arvalid = arval;
    assign m_axi_arburst = 2'b01; // INCR
    assign m_axi_arlock = 0;
-   assign m_axi_arsize = 3'b011; // 8 bytes each transfer
+   assign m_axi_arsize = $clog2(AXI / 8); // 4/8 bytes each transfer
    assign m_axi_arprot = 0;
    assign m_axi_araddr = raddr;
    assign m_axi_arcache = 0;

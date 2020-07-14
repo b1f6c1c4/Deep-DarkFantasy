@@ -1,6 +1,7 @@
 module axi_sink #(
    parameter WIDTH = 24, // Must be 8x
-   parameter SIZE = 128
+   parameter SIZE = 128,
+   parameter AXI = 64 // Must be 32 or 64
 ) (
    input clk_i,
    input rst_ni,
@@ -27,25 +28,25 @@ module axi_sink #(
    output [2:0] m_axi_awsize,
    output [2:0] m_axi_awprot,
    output [31:0] m_axi_awaddr,
-   output [63:0] m_axi_wdata,
+   output [AXI-1:0] m_axi_wdata,
    output [3:0] m_axi_awcache,
    output [3:0] m_axi_awlen,
    output [3:0] m_axi_awqos,
-   output [7:0] m_axi_wstrb,
+   output [AXI/8-1:0] m_axi_wstrb,
    output [5:0] m_axi_awid,
    output [5:0] m_axi_wid
 );
    localparam TRANS = 16;
-   localparam BATCH = 64 * TRANS;
+   localparam BATCH = AXI * TRANS;
    localparam NBATCH = (WIDTH * SIZE + BATCH - 1) / BATCH;
 
    // data_i -> repacker -> fifo -> | -> M_AXI_W
 
    wire wfval, wfrdy;
-   wire [63:0] wfdata;
+   wire [AXI-1:0] wfdata;
    repacker #(
       .IN (WIDTH / 8),
-      .OUT (8)
+      .OUT (AXI / 8)
    ) i_wpacker (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
@@ -60,9 +61,9 @@ module axi_sink #(
 
    wire fifo_valid;
    reg wde2;
-   wire [63:0] wd2;
+   wire [AXI-1:0] wd2;
    fifo #(
-      .WIDTH (64),
+      .WIDTH (AXI),
       .BURST (TRANS)
    ) i_wfifo (
       .clk_i (clk_i),
@@ -85,10 +86,10 @@ module axi_sink #(
          wglast <= 0;
       end else if (aval_i) begin
          waddr <= addr_i;
-         wladdr <= addr_i + (NBATCH - 1) * TRANS * 8;
+         wladdr <= addr_i + (NBATCH - 1) * TRANS * AXI / 8;
          wglast <= 0;
       end else if (awval && m_axi_awready) begin
-         waddr <= waddr + TRANS * 8;
+         waddr <= waddr + TRANS * AXI / 8;
          wglast <= waddr == wladdr;
       end
    end
@@ -104,7 +105,7 @@ module axi_sink #(
       end
    end
 
-   reg [63:0] wbuff;
+   reg [AXI-1:0] wbuff;
    reg [3:0] wcnt;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
@@ -141,7 +142,7 @@ module axi_sink #(
    assign m_axi_awvalid = awval;
    assign m_axi_awburst = 2'b01; // INCR
    assign m_axi_awlock = 0;
-   assign m_axi_awsize = 3'b011; // 8 bytes each transfer
+   assign m_axi_awsize = $clog2(AXI / 8); // 4/8 bytes each transfer
    assign m_axi_awprot = 0;
    assign m_axi_awaddr = waddr;
    assign m_axi_awcache = 0;
@@ -152,7 +153,7 @@ module axi_sink #(
    assign m_axi_wlast = &wcnt;
    assign m_axi_wvalid = wemit;
    assign m_axi_wdata = wbuff;
-   assign m_axi_wstrb = 8'b11111111;
+   assign m_axi_wstrb = {(AXI/8){1'b1}};
    assign m_axi_wid = 0;
 
    assign m_axi_bready = 1;
