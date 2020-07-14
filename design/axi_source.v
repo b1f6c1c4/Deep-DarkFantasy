@@ -36,26 +36,25 @@ module axi_source #(
    localparam BATCH = AXI * TRANS;
    localparam NBATCH = (WIDTH * SIZE + BATCH - 1) / BATCH;
 
-   // M_AXI_R -> | -> repacker -> fifo -> data_o
+   // M_AXI_R -> fifo -> repacker -> fifo -> data_o
 
-   reg rbuffed;
-   reg [AXI-1:0] rbuff;
-   always @(posedge clk_i, negedge rst_ni) begin
-      if (~rst_ni) begin
-         rbuffed <= 0;
-         rbuff <= 0;
-      end else if (aval_i) begin
-         rbuffed <= 0;
-      end else if (m_axi_rvalid && m_axi_rready) begin
-         rbuffed <= 1;
-         rbuff <= m_axi_rdata;
-      end else if (rbuffed && m_axi_rready) begin
-         rbuffed <= 0;
-      end
-   end
+   wire rfval1, rfrdy1;
+   wire [AXI-1:0] rfdata1;
+   fifo #(
+      .WIDTH (AXI)
+   ) i_rfifo1 (
+      .clk_i (clk_i),
+      .srst_i (aval_i),
+      .in_val_i (m_axi_rvalid),
+      .in_data_i (m_axi_rdata),
+      .in_rdy_o (m_axi_rready),
+      .out_val_o (rfval1),
+      .out_data_o (rfdata1),
+      .out_rdy_i (rfrdy1)
+   );
 
-   wire rfval, rfrdy;
-   wire [WIDTH-1:0] rfdata;
+   wire rfval2, rfrdy2;
+   wire [WIDTH-1:0] rfdata2;
    repacker #(
       .IN (AXI / 8),
       .OUT (WIDTH / 8)
@@ -63,22 +62,22 @@ module axi_source #(
       .clk_i (clk_i),
       .rst_ni (rst_ni),
       .srst_i (aval_i),
-      .in_val_i (rbuffed),
-      .in_data_i (rbuff),
-      .in_rdy_o (m_axi_rready),
-      .out_val_o (rfval),
-      .out_data_o (rfdata),
-      .out_rdy_i (rfrdy)
+      .in_val_i (rfval1),
+      .in_data_i (rfdata1),
+      .in_rdy_o (rfrdy1),
+      .out_val_o (rfval2),
+      .out_data_o (rfdata2),
+      .out_rdy_i (rfrdy2)
    );
 
    fifo #(
       .WIDTH (WIDTH)
-   ) i_rfifo (
+   ) i_rfifo2 (
       .clk_i (clk_i),
       .srst_i (aval_i),
-      .in_val_i (rfval),
-      .in_data_i (rfdata),
-      .in_rdy_o (rfrdy),
+      .in_val_i (rfval2),
+      .in_data_i (rfdata2),
+      .in_rdy_o (rfrdy2),
       .out_val_o (),
       .out_data_o (data_o),
       .out_rdy_i (rdy_i)
