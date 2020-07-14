@@ -75,7 +75,7 @@ module axi_delayer #(
 
       .en_i (wen_i),
 
-      .aval_i (vs_rise),
+      .aval_i (vs_i),
       .addr_i (bs ? ABASE : BBASE),
       .val_i (de_i),
       .data_i (data_i),
@@ -112,7 +112,7 @@ module axi_delayer #(
 
       .en_i (ren_i),
 
-      .aval_i (vs_rise),
+      .aval_i (vs_i),
       .addr_i (bs ? BBASE : ABASE),
       .rdy_i (de_i),
       .data_o (data_o),

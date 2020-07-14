@@ -56,12 +56,6 @@ module overlay #(
 );
    localparam MAX_CNT = 200000000;
 
-   reg vs_r;
-   wire vs_rise = ~vs_r && vin_vs_i;
-   always @(posedge vin_clk_i) begin
-      vs_r <= vin_vs_i;
-   end
-
    assign m_axi_aclk = vin_clk_i;
 
    assign m_axi_awvalid = 0;
@@ -96,7 +90,7 @@ module overlay #(
 
       .en_i (1),
 
-      .aval_i (vs_rise),
+      .aval_i (vin_vs_i),
       .addr_i (BASE),
       .rdy_i (vin_de_i),
       .data_o (pat),

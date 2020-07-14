@@ -101,10 +101,17 @@ module axi_source #(
       end
    end
 
+   reg aval_r;
+   always @(posedge clk_i) begin
+      aval_r <= aval_i;
+   end
+
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
          arval <= 0;
-      end else if (aval_i && en_i) begin
+      end else if (aval_i) begin
+         arval <= 0;
+      end else if (aval_r && en_i) begin
          arval <= 1;
       end else if (arval && m_axi_arready) begin
          arval <= ~rglast && en_i;
