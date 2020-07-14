@@ -7,8 +7,6 @@ module deep #(
    parameter KV = 30,
    parameter SMOOTH_T = 1400
 ) (
-   input clk_i,
-
    input [3:0] sw_i,
    input [3:0] button_i,
    input [2:0] rot_ni,
@@ -52,13 +50,7 @@ module deep #(
    inout PS_PORB
 );
 
-   wire clk_ref, rst_ref_n; // 200MHz
-   ref_pll i_ref_pll (
-      .resetn(1'b1),
-      .clk_in1(clk_i),
-      .clk_out1(clk_ref),
-      .locked(rst_ref_n)
-   );
+   wire clk_200MHz, clk_333kHz;
 
    wire rst_n = ~button_i[3];
 
@@ -69,7 +61,7 @@ module deep #(
       .INIT (3),
       .T (3)
    ) i_rotary (
-      .clk_i (clk_i),
+      .clk_i (clk_333kHz),
       .rst_ni (rst_n),
       .rot_ni (rot_ni),
       .zero_i (button_i[0]),
@@ -230,6 +222,8 @@ module deep #(
       .S_AXI_HP1_WDATA (AXI1_WDATA),
       .S_AXI_HP1_WSTRB (AXI1_WSTRB),
 
+      .FCLK_CLK0 (clk_200MHz),
+      .FCLK_CLK1 (clk_333kHz),
       .MIO (MIO),
       .DDR_CAS_n (DDR_CAS_n),
       .DDR_CKE (DDR_CKE),
@@ -265,10 +259,10 @@ module deep #(
       .SMOOTH_T (SMOOTH_T),
       .BASE (32'h20000000)
    ) i_dark_0 (
-      .clk_ref_i (clk_ref),
-      .rst_ref_ni (rst_ref_n),
+      .clk_ref_i (clk_200MHz),
+      .rst_ref_ni (rst_n),
 
-      .clk_i (clk_i),
+      .clk_i (clk_333kHz),
       .rst_ni (rst_n),
       .ren_i (~sw_i[2]),
       .wen_i (~sw_i[3]),

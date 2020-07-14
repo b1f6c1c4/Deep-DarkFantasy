@@ -54,7 +54,7 @@ module overlay #(
    output [5:0] m_axi_awid,
    output [5:0] m_axi_wid
 );
-   localparam MAX_CNT = 200000000;
+   localparam MAX_CNT = 600000;
 
    assign m_axi_aclk = vin_clk_i;
 

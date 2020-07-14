@@ -25,9 +25,9 @@ module rotary #(
          man <= {zero_i,inc_i,dec_i};
          man_r <= 2'b0;
          if (man == {zero_i,inc_i,dec_i}) begin
-            if (man_cnt < 1800000) begin
+            if (man_cnt < 5400) begin
                man_cnt <= man_cnt + 1;
-            end else if (man_cnt == 1800000) begin
+            end else if (man_cnt == 5400) begin
                man_cnt <= man_cnt + 1;
                man_r <= man;
             end
@@ -47,7 +47,7 @@ module rotary #(
       end else begin
          pre_rot_n <= rot_ni;
          if (pre_rot_n == rot_ni) begin
-            if (pre_cnt < 80000) begin
+            if (pre_cnt < 240) begin
                pre_cnt <= pre_cnt + 1;
             end else begin
                pre_rot_nr <= pre_rot_n;
@@ -87,7 +87,7 @@ module rotary #(
                rot_nrr <= rot_nr;
                aut <= 2'b01;
             end
-         end else if (cnt < 200000) begin
+         end else if (cnt < 600) begin
             cnt <= cnt + 1;
          end else if (rot_nr == {rot_nrr[0],rot_nrr[T-1:1]}) begin
             cnt <= 0;
