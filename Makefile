@@ -6,7 +6,7 @@ CONSTR=$(wildcard constr/*.xdc)
 XCI=$(patsubst ip/%.xci,%,$(wildcard ip/*.xci))
 FONT?=/usr/share/fonts/TTF/Consolas-Regular.ttf
 
-PART=xc7z020clg400-1
+PART=xc7z007sclg225-1
 export PART
 
 include config

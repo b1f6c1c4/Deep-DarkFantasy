@@ -7,27 +7,40 @@ module deep #(
    parameter KV = 30,
    parameter SMOOTH_T = 1400
 ) (
-   input [3:0] sw_i,
    input [3:0] button_i,
    input [2:0] rot_ni,
 
    output [3:0] led_o,
 
-   output hdmi_in_hpd_o,
-   inout hdmi_in_ddc_scl_io,
-   inout hdmi_in_ddc_sda_io,
-   input hdmi_in_clk_n,
-   input hdmi_in_clk_p,
-   input [2:0] hdmi_in_data_n,
-   input [2:0] hdmi_in_data_p,
+   output hdmi0_in_hpd_o,
+   inout hdmi0_in_ddc_scl_io,
+   inout hdmi0_in_ddc_sda_io,
+   input hdmi0_in_clk_n,
+   input hdmi0_in_clk_p,
+   input [2:0] hdmi0_in_data_n,
+   input [2:0] hdmi0_in_data_p,
 
-   input hdmi_out_hpd_i,
-   output hdmi_out_clk_n,
-   output hdmi_out_clk_p,
-   output [2:0] hdmi_out_data_n,
-   output [2:0] hdmi_out_data_p,
+   input hdmi0_out_hpd_i,
+   output hdmi0_out_clk_n,
+   output hdmi0_out_clk_p,
+   output [2:0] hdmi0_out_data_n,
+   output [2:0] hdmi0_out_data_p,
 
-   inout [53:0] MIO,
+   output hdmi1_in_hpd_o,
+   inout hdmi1_in_ddc_scl_io,
+   inout hdmi1_in_ddc_sda_io,
+   input hdmi1_in_clk_n,
+   input hdmi1_in_clk_p,
+   input [2:0] hdmi1_in_data_n,
+   input [2:0] hdmi1_in_data_p,
+
+   input hdmi1_out_hpd_i,
+   output hdmi1_out_clk_n,
+   output hdmi1_out_clk_p,
+   output [2:0] hdmi1_out_data_n,
+   output [2:0] hdmi1_out_data_p,
+
+   inout [31:0] MIO,
    inout DDR_CAS_n,
    inout DDR_CKE,
    inout DDR_Clk_n,
@@ -41,10 +54,10 @@ module deep #(
    inout [14:0] DDR_Addr,
    inout DDR_VRN,
    inout DDR_VRP,
-   inout [3:0] DDR_DM,
-   inout [31:0] DDR_DQ,
-   inout [3:0] DDR_DQS_n,
-   inout [3:0] DDR_DQS,
+   inout [1:0] DDR_DM,
+   inout [15:0] DDR_DQ,
+   inout [1:0] DDR_DQS_n,
+   inout [1:0] DDR_DQS,
    inout PS_SRSTB,
    inout PS_CLK,
    inout PS_PORB
@@ -74,7 +87,6 @@ module deep #(
 
    assign led_o[0] = fantasy_mode[0];
    assign led_o[1] = fantasy_mode[1];
-   assign led_o[2] = fantasy_mode[2];
 
    // Memory
 
@@ -128,6 +140,57 @@ module deep #(
    assign AXI1_RDISSUECAP1_EN = 0;
    assign AXI0_WRISSUECAP1_EN = 0;
    assign AXI1_WRISSUECAP1_EN = 0;
+
+   wire AXI2_ARREADY, AXI3_ARREADY;
+   wire AXI2_AWREADY, AXI3_AWREADY;
+   wire AXI2_BVALID, AXI3_BVALID;
+   wire AXI2_RLAST, AXI3_RLAST;
+   wire AXI2_RVALID, AXI3_RVALID;
+   wire AXI2_WREADY, AXI3_WREADY;
+   wire [1:0] AXI2_BRESP, AXI3_BRESP;
+   wire [1:0] AXI2_RRESP, AXI3_RRESP;
+   wire [5:0] AXI2_BID, AXI3_BID;
+   wire [5:0] AXI2_RID, AXI3_RID;
+   wire [63:0] AXI2_RDATA, AXI3_RDATA;
+   wire [7:0] AXI2_RCOUNT, AXI3_RCOUNT;
+   wire [7:0] AXI2_WCOUNT, AXI3_WCOUNT;
+   wire [2:0] AXI2_RACOUNT, AXI3_RACOUNT;
+   wire [5:0] AXI2_WACOUNT, AXI3_WACOUNT;
+   wire AXI2_ACLK, AXI3_ACLK;
+   wire AXI2_ARVALID, AXI3_ARVALID;
+   wire AXI2_AWVALID, AXI3_AWVALID;
+   wire AXI2_BREADY, AXI3_BREADY;
+   wire AXI2_RDISSUECAP1_EN, AXI3_RDISSUECAP1_EN;
+   wire AXI2_RREADY, AXI3_RREADY;
+   wire AXI2_WLAST, AXI3_WLAST;
+   wire AXI2_WRISSUECAP1_EN, AXI3_WRISSUECAP1_EN;
+   wire AXI2_WVALID, AXI3_WVALID;
+   wire [1:0] AXI2_ARBURST, AXI3_ARBURST;
+   wire [1:0] AXI2_ARLOCK, AXI3_ARLOCK;
+   wire [2:0] AXI2_ARSIZE, AXI3_ARSIZE;
+   wire [1:0] AXI2_AWBURST, AXI3_AWBURST;
+   wire [1:0] AXI2_AWLOCK, AXI3_AWLOCK;
+   wire [2:0] AXI2_AWSIZE, AXI3_AWSIZE;
+   wire [2:0] AXI2_ARPROT, AXI3_ARPROT;
+   wire [2:0] AXI2_AWPROT, AXI3_AWPROT;
+   wire [31:0] AXI2_ARADDR, AXI3_ARADDR;
+   wire [31:0] AXI2_AWADDR, AXI3_AWADDR;
+   wire [3:0] AXI2_ARCACHE, AXI3_ARCACHE;
+   wire [3:0] AXI2_ARLEN, AXI3_ARLEN;
+   wire [3:0] AXI2_ARQOS, AXI3_ARQOS;
+   wire [3:0] AXI2_AWCACHE, AXI3_AWCACHE;
+   wire [3:0] AXI2_AWLEN, AXI3_AWLEN;
+   wire [3:0] AXI2_AWQOS, AXI3_AWQOS;
+   wire [5:0] AXI2_ARID, AXI3_ARID;
+   wire [5:0] AXI2_AWID, AXI3_AWID;
+   wire [5:0] AXI2_WID, AXI3_WID;
+   wire [63:0] AXI2_WDATA, AXI3_WDATA;
+   wire [7:0] AXI2_WSTRB, AXI3_WSTRB;
+
+   assign AXI2_RDISSUECAP1_EN = 0;
+   assign AXI3_RDISSUECAP1_EN = 0;
+   assign AXI2_WRISSUECAP1_EN = 0;
+   assign AXI3_WRISSUECAP1_EN = 0;
 
    processing_system7_0 i_ps (
       .S_AXI_HP0_ARREADY (AXI0_ARREADY),
@@ -222,6 +285,98 @@ module deep #(
       .S_AXI_HP1_WDATA (AXI1_WDATA),
       .S_AXI_HP1_WSTRB (AXI1_WSTRB),
 
+      .S_AXI_HP2_ARREADY (AXI2_ARREADY),
+      .S_AXI_HP2_AWREADY (AXI2_AWREADY),
+      .S_AXI_HP2_BVALID (AXI2_BVALID),
+      .S_AXI_HP2_RLAST (AXI2_RLAST),
+      .S_AXI_HP2_RVALID (AXI2_RVALID),
+      .S_AXI_HP2_WREADY (AXI2_WREADY),
+      .S_AXI_HP2_BRESP (AXI2_BRESP),
+      .S_AXI_HP2_RRESP (AXI2_RRESP),
+      .S_AXI_HP2_BID (AXI2_BID),
+      .S_AXI_HP2_RID (AXI2_RID),
+      .S_AXI_HP2_RDATA (AXI2_RDATA),
+      .S_AXI_HP2_RCOUNT (AXI2_RCOUNT),
+      .S_AXI_HP2_WCOUNT (AXI2_WCOUNT),
+      .S_AXI_HP2_RACOUNT (AXI2_RACOUNT),
+      .S_AXI_HP2_WACOUNT (AXI2_WACOUNT),
+      .S_AXI_HP2_ACLK (AXI2_ACLK),
+      .S_AXI_HP2_ARVALID (AXI2_ARVALID),
+      .S_AXI_HP2_AWVALID (AXI2_AWVALID),
+      .S_AXI_HP2_BREADY (AXI2_BREADY),
+      .S_AXI_HP2_RDISSUECAP1_EN (AXI2_RDISSUECAP1_EN),
+      .S_AXI_HP2_RREADY (AXI2_RREADY),
+      .S_AXI_HP2_WLAST (AXI2_WLAST),
+      .S_AXI_HP2_WRISSUECAP1_EN (AXI2_WRISSUECAP1_EN),
+      .S_AXI_HP2_WVALID (AXI2_WVALID),
+      .S_AXI_HP2_ARBURST (AXI2_ARBURST),
+      .S_AXI_HP2_ARLOCK (AXI2_ARLOCK),
+      .S_AXI_HP2_ARSIZE (AXI2_ARSIZE),
+      .S_AXI_HP2_AWBURST (AXI2_AWBURST),
+      .S_AXI_HP2_AWLOCK (AXI2_AWLOCK),
+      .S_AXI_HP2_AWSIZE (AXI2_AWSIZE),
+      .S_AXI_HP2_ARPROT (AXI2_ARPROT),
+      .S_AXI_HP2_AWPROT (AXI2_AWPROT),
+      .S_AXI_HP2_ARADDR (AXI2_ARADDR),
+      .S_AXI_HP2_AWADDR (AXI2_AWADDR),
+      .S_AXI_HP2_ARCACHE (AXI2_ARCACHE),
+      .S_AXI_HP2_ARLEN (AXI2_ARLEN),
+      .S_AXI_HP2_ARQOS (AXI2_ARQOS),
+      .S_AXI_HP2_AWCACHE (AXI2_AWCACHE),
+      .S_AXI_HP2_AWLEN (AXI2_AWLEN),
+      .S_AXI_HP2_AWQOS (AXI2_AWQOS),
+      .S_AXI_HP2_ARID (AXI2_ARID),
+      .S_AXI_HP2_AWID (AXI2_AWID),
+      .S_AXI_HP2_WID (AXI2_WID),
+      .S_AXI_HP2_WDATA (AXI2_WDATA),
+      .S_AXI_HP2_WSTRB (AXI2_WSTRB),
+
+      .S_AXI_HP3_ARREADY (AXI3_ARREADY),
+      .S_AXI_HP3_AWREADY (AXI3_AWREADY),
+      .S_AXI_HP3_BVALID (AXI3_BVALID),
+      .S_AXI_HP3_RLAST (AXI3_RLAST),
+      .S_AXI_HP3_RVALID (AXI3_RVALID),
+      .S_AXI_HP3_WREADY (AXI3_WREADY),
+      .S_AXI_HP3_BRESP (AXI3_BRESP),
+      .S_AXI_HP3_RRESP (AXI3_RRESP),
+      .S_AXI_HP3_BID (AXI3_BID),
+      .S_AXI_HP3_RID (AXI3_RID),
+      .S_AXI_HP3_RDATA (AXI3_RDATA),
+      .S_AXI_HP3_RCOUNT (AXI3_RCOUNT),
+      .S_AXI_HP3_WCOUNT (AXI3_WCOUNT),
+      .S_AXI_HP3_RACOUNT (AXI3_RACOUNT),
+      .S_AXI_HP3_WACOUNT (AXI3_WACOUNT),
+      .S_AXI_HP3_ACLK (AXI3_ACLK),
+      .S_AXI_HP3_ARVALID (AXI3_ARVALID),
+      .S_AXI_HP3_AWVALID (AXI3_AWVALID),
+      .S_AXI_HP3_BREADY (AXI3_BREADY),
+      .S_AXI_HP3_RDISSUECAP1_EN (AXI3_RDISSUECAP1_EN),
+      .S_AXI_HP3_RREADY (AXI3_RREADY),
+      .S_AXI_HP3_WLAST (AXI3_WLAST),
+      .S_AXI_HP3_WRISSUECAP1_EN (AXI3_WRISSUECAP1_EN),
+      .S_AXI_HP3_WVALID (AXI3_WVALID),
+      .S_AXI_HP3_ARBURST (AXI3_ARBURST),
+      .S_AXI_HP3_ARLOCK (AXI3_ARLOCK),
+      .S_AXI_HP3_ARSIZE (AXI3_ARSIZE),
+      .S_AXI_HP3_AWBURST (AXI3_AWBURST),
+      .S_AXI_HP3_AWLOCK (AXI3_AWLOCK),
+      .S_AXI_HP3_AWSIZE (AXI3_AWSIZE),
+      .S_AXI_HP3_ARPROT (AXI3_ARPROT),
+      .S_AXI_HP3_AWPROT (AXI3_AWPROT),
+      .S_AXI_HP3_ARADDR (AXI3_ARADDR),
+      .S_AXI_HP3_AWADDR (AXI3_AWADDR),
+      .S_AXI_HP3_ARCACHE (AXI3_ARCACHE),
+      .S_AXI_HP3_ARLEN (AXI3_ARLEN),
+      .S_AXI_HP3_ARQOS (AXI3_ARQOS),
+      .S_AXI_HP3_AWCACHE (AXI3_AWCACHE),
+      .S_AXI_HP3_AWLEN (AXI3_AWLEN),
+      .S_AXI_HP3_AWQOS (AXI3_AWQOS),
+      .S_AXI_HP3_ARID (AXI3_ARID),
+      .S_AXI_HP3_AWID (AXI3_AWID),
+      .S_AXI_HP3_WID (AXI3_WID),
+      .S_AXI_HP3_WDATA (AXI3_WDATA),
+      .S_AXI_HP3_WSTRB (AXI3_WSTRB),
+
       .FCLK_CLK0 (clk_200MHz),
       .FCLK_CLK1 (clk_333kHz),
       .MIO (MIO),
@@ -264,24 +419,24 @@ module deep #(
 
       .clk_i (clk_333kHz),
       .rst_ni (rst_n),
-      .ren_i (~sw_i[2]),
-      .wen_i (~sw_i[3]),
+      .ren_i (1),
+      .wen_i (1),
       .mode_i (fantasy_mode),
       .led_o (led_o[3]),
 
-      .hdmi_in_hpd_o (hdmi_in_hpd_o),
-      .hdmi_in_ddc_scl_io (hdmi_in_ddc_scl_io),
-      .hdmi_in_ddc_sda_io (hdmi_in_ddc_sda_io),
-      .hdmi_in_clk_n (hdmi_in_clk_n),
-      .hdmi_in_clk_p (hdmi_in_clk_p),
-      .hdmi_in_data_n (hdmi_in_data_n),
-      .hdmi_in_data_p (hdmi_in_data_p),
+      .hdmi_in_hpd_o (hdmi0_in_hpd_o),
+      .hdmi_in_ddc_scl_io (hdmi0_in_ddc_scl_io),
+      .hdmi_in_ddc_sda_io (hdmi0_in_ddc_sda_io),
+      .hdmi_in_clk_n (hdmi0_in_clk_n),
+      .hdmi_in_clk_p (hdmi0_in_clk_p),
+      .hdmi_in_data_n (hdmi0_in_data_n),
+      .hdmi_in_data_p (hdmi0_in_data_p),
 
-      .hdmi_out_hpd_i (hdmi_out_hpd_i),
-      .hdmi_out_clk_n (hdmi_out_clk_n),
-      .hdmi_out_clk_p (hdmi_out_clk_p),
-      .hdmi_out_data_n (hdmi_out_data_n),
-      .hdmi_out_data_p (hdmi_out_data_p),
+      .hdmi_out_hpd_i (hdmi0_out_hpd_i),
+      .hdmi_out_clk_n (hdmi0_out_clk_n),
+      .hdmi_out_clk_p (hdmi0_out_clk_p),
+      .hdmi_out_data_n (hdmi0_out_data_n),
+      .hdmi_out_data_p (hdmi0_out_data_p),
 
       .m_axi0_arready (AXI0_ARREADY),
       .m_axi0_awready (AXI0_AWREADY),
@@ -362,6 +517,121 @@ module deep #(
       .m_axi1_arid (AXI1_ARID),
       .m_axi1_awid (AXI1_AWID),
       .m_axi1_wid (AXI1_WID)
+   );
+
+   dark #(
+      .H_WIDTH (H_WIDTH),
+      .H_START (H_START),
+      .H_TOTAL (H_TOTAL),
+      .V_HEIGHT (V_HEIGHT),
+      .KH (KH),
+      .KV (KV),
+      .SMOOTH_T (SMOOTH_T),
+      .BASE (32'h20000000)
+   ) i_dark_1 (
+      .clk_ref_i (clk_200MHz),
+      .rst_ref_ni (rst_n),
+
+      .clk_i (clk_333kHz),
+      .rst_ni (rst_n),
+      .ren_i (1),
+      .wen_i (1),
+      .mode_i (fantasy_mode),
+      .led_o (led_o[2]),
+
+      .hdmi_in_hpd_o (hdmi1_in_hpd_o),
+      .hdmi_in_ddc_scl_io (hdmi1_in_ddc_scl_io),
+      .hdmi_in_ddc_sda_io (hdmi1_in_ddc_sda_io),
+      .hdmi_in_clk_n (hdmi1_in_clk_n),
+      .hdmi_in_clk_p (hdmi1_in_clk_p),
+      .hdmi_in_data_n (hdmi1_in_data_n),
+      .hdmi_in_data_p (hdmi1_in_data_p),
+
+      .hdmi_out_hpd_i (hdmi1_out_hpd_i),
+      .hdmi_out_clk_n (hdmi1_out_clk_n),
+      .hdmi_out_clk_p (hdmi1_out_clk_p),
+      .hdmi_out_data_n (hdmi1_out_data_n),
+      .hdmi_out_data_p (hdmi1_out_data_p),
+
+      .m_axi0_arready (AXI2_ARREADY),
+      .m_axi0_awready (AXI2_AWREADY),
+      .m_axi0_bvalid (AXI2_BVALID),
+      .m_axi0_rlast (AXI2_RLAST),
+      .m_axi0_rvalid (AXI2_RVALID),
+      .m_axi0_wready (AXI2_WREADY),
+      .m_axi0_bresp (AXI2_BRESP),
+      .m_axi0_rresp (AXI2_RRESP),
+      .m_axi0_rdata (AXI2_RDATA),
+      .m_axi0_bid (AXI2_BID),
+      .m_axi0_rid (AXI2_RID),
+      .m_axi0_aclk (AXI2_ACLK),
+      .m_axi0_arvalid (AXI2_ARVALID),
+      .m_axi0_awvalid (AXI2_AWVALID),
+      .m_axi0_bready (AXI2_BREADY),
+      .m_axi0_rready (AXI2_RREADY),
+      .m_axi0_wlast (AXI2_WLAST),
+      .m_axi0_wvalid (AXI2_WVALID),
+      .m_axi0_arburst (AXI2_ARBURST),
+      .m_axi0_arlock (AXI2_ARLOCK),
+      .m_axi0_arsize (AXI2_ARSIZE),
+      .m_axi0_awburst (AXI2_AWBURST),
+      .m_axi0_awlock (AXI2_AWLOCK),
+      .m_axi0_awsize (AXI2_AWSIZE),
+      .m_axi0_arprot (AXI2_ARPROT),
+      .m_axi0_awprot (AXI2_AWPROT),
+      .m_axi0_araddr (AXI2_ARADDR),
+      .m_axi0_awaddr (AXI2_AWADDR),
+      .m_axi0_wdata (AXI2_WDATA),
+      .m_axi0_arcache (AXI2_ARCACHE),
+      .m_axi0_arlen (AXI2_ARLEN),
+      .m_axi0_arqos (AXI2_ARQOS),
+      .m_axi0_awcache (AXI2_AWCACHE),
+      .m_axi0_awlen (AXI2_AWLEN),
+      .m_axi0_awqos (AXI2_AWQOS),
+      .m_axi0_wstrb (AXI2_WSTRB),
+      .m_axi0_arid (AXI2_ARID),
+      .m_axi0_awid (AXI2_AWID),
+      .m_axi0_wid (AXI2_WID),
+
+      .m_axi1_arready (AXI3_ARREADY),
+      .m_axi1_awready (AXI3_AWREADY),
+      .m_axi1_bvalid (AXI3_BVALID),
+      .m_axi1_rlast (AXI3_RLAST),
+      .m_axi1_rvalid (AXI3_RVALID),
+      .m_axi1_wready (AXI3_WREADY),
+      .m_axi1_bresp (AXI3_BRESP),
+      .m_axi1_rresp (AXI3_RRESP),
+      .m_axi1_rdata (AXI3_RDATA),
+      .m_axi1_bid (AXI3_BID),
+      .m_axi1_rid (AXI3_RID),
+      .m_axi1_aclk (AXI3_ACLK),
+      .m_axi1_arvalid (AXI3_ARVALID),
+      .m_axi1_awvalid (AXI3_AWVALID),
+      .m_axi1_bready (AXI3_BREADY),
+      .m_axi1_rready (AXI3_RREADY),
+      .m_axi1_wlast (AXI3_WLAST),
+      .m_axi1_wvalid (AXI3_WVALID),
+      .m_axi1_arburst (AXI3_ARBURST),
+      .m_axi1_arlock (AXI3_ARLOCK),
+      .m_axi1_arsize (AXI3_ARSIZE),
+      .m_axi1_awburst (AXI3_AWBURST),
+      .m_axi1_awlock (AXI3_AWLOCK),
+      .m_axi1_awsize (AXI3_AWSIZE),
+      .m_axi1_arprot (AXI3_ARPROT),
+      .m_axi1_awprot (AXI3_AWPROT),
+      .m_axi1_araddr (AXI3_ARADDR),
+      .m_axi1_awaddr (AXI3_AWADDR),
+      .m_axi1_wdata (AXI3_WDATA),
+      .m_axi1_arcache (AXI3_ARCACHE),
+      .m_axi1_arlen (AXI3_ARLEN),
+      .m_axi1_arqos (AXI3_ARQOS),
+      .m_axi1_awcache (AXI3_AWCACHE),
+      .m_axi1_awlen (AXI3_AWLEN),
+      .m_axi1_awqos (AXI3_AWQOS),
+      .m_axi1_wstrb (AXI3_WSTRB),
+      .m_axi1_arid (AXI3_ARID),
+      .m_axi1_awid (AXI3_AWID),
+      .m_axi1_wid (AXI3_WID)
    );
 
 endmodule

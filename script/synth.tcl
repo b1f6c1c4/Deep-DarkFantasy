@@ -17,9 +17,9 @@ if {[llength $names] > 0} {
 set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*.xdc]]
 set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*/*.xdc]]
 set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/ila*/*/*/*.xdc]]
+set_property IS_ENABLED 0 [get_files [glob ./ip/dvi2rgb_1080p/src/dvi2rgb.xdc]]
 
 set VIN_FREQ $::env(FREQ)
-read_xdc [glob ../constr/timing.xdc]
 synth_design -top deep \
     -generic H_WIDTH=$::env(H_WIDTH) \
     -generic H_START=$::env(H_START) \
@@ -28,6 +28,7 @@ synth_design -top deep \
     -generic KH=$::env(KH) \
     -generic KV=$::env(KV) \
     -generic SMOOTH_T=$::env(SMOOTH_T)
+read_xdc [glob ../constr/timing.xdc]
 write_checkpoint -force post_synth.dcp
 report_timing_summary -file report/timing_syn.rpt
 report_utilization -file report/util_syn.rpt
