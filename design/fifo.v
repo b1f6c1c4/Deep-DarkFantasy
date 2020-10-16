@@ -4,6 +4,7 @@ module fifo #(
 ) (
    input clk_i,
    input srst_i,
+   input en_i,
 
    input in_val_i,
    input [WIDTH-1:0] in_data_i,
@@ -51,7 +52,7 @@ module fifo #(
                .REGCE (0),
 
                .WRCLK (clk_i),
-               .WREN (~srst_i && in_val_i && in_rdy_o),
+               .WREN (en_i && ~srst_i && in_val_i && in_rdy_o),
                .DI ({{(64-W){1'b0}},w[W-1:0]}),
                .DIP (0),
                .FULL (fulls[i]),
@@ -84,7 +85,7 @@ module fifo #(
                .REGCE (0),
 
                .WRCLK (clk_i),
-               .WREN (~srst_i && in_val_i && in_rdy_o),
+               .WREN (en_i && ~srst_i && in_val_i && in_rdy_o),
                .DI ({{(32-W){1'b0}},w[W-1:0]}),
                .DIP (0),
                .FULL (fulls[i]),
@@ -104,7 +105,7 @@ module fifo #(
    endgenerate
 
    always @(*) begin
-      if (srst_i) begin
+      if (srst_i || ~en_i) begin
          rden = 0;
          out_val_o = 0;
          rbuf_next = 0;

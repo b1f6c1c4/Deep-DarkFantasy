@@ -46,6 +46,7 @@ module axi_source #(
    ) i_rfifo1 (
       .clk_i (clk_i),
       .srst_i (srst_i),
+      .en_i (~aval_i),
       .in_val_i (m_axi_rvalid),
       .in_data_i (m_axi_rdata),
       .in_rdy_o (m_axi_rready),
@@ -76,6 +77,7 @@ module axi_source #(
    ) i_rfifo2 (
       .clk_i (clk_i),
       .srst_i (srst_i),
+      .en_i (~aval_i),
       .in_val_i (rfval2),
       .in_data_i (rfdata2),
       .in_rdy_o (rfrdy2),

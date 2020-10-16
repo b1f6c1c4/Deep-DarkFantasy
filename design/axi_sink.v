@@ -69,6 +69,7 @@ module axi_sink #(
    ) i_wfifo (
       .clk_i (clk_i),
       .srst_i (srst_i),
+      .en_i (~aval_i),
       .in_val_i (wfval),
       .in_data_i (wfdata),
       .in_rdy_o (wfrdy),

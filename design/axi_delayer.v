@@ -59,14 +59,30 @@ module axi_delayer #(
 
    reg vs_r, bs;
    wire vs_rise = ~vs_r && vs_i;
-   always @(posedge clk_i) begin
-      vs_r <= vs_i;
-      bs <= bs ^ vs_rise;
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         vs_r <= 0;
+         bs <= 0;
+      end else begin
+         vs_r <= vs_i;
+         bs <= bs ^ vs_rise;
+      end
+   end
+
+   reg inited;
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         inited <= 0;
+      end else if (vs_i) begin
+         inited <= 1;
+      end
    end
 
    reg [3:0] cnt;
-   always @(posedge clk_i) begin
-      if (vs_i) begin
+   always @(posedge clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         cnt <= 4'd15;
+      end else if (vs_rise) begin
          cnt <= 4'd15;
       end else if (|cnt) begin
          cnt <= cnt - 1;
@@ -81,11 +97,11 @@ module axi_delayer #(
    ) i_sink (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
-      .srst_i (|cnt),
+      .srst_i (~rst_ni || |cnt),
 
       .en_i (wen_i),
 
-      .aval_i (vs_i),
+      .aval_i (~inited || vs_i),
       .addr_i (bs ? ABASE : BBASE),
       .val_i (de_i),
       .data_i (data_i),
@@ -119,11 +135,11 @@ module axi_delayer #(
    ) i_source (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
-      .srst_i (|cnt),
+      .srst_i (~rst_ni || |cnt),
 
       .en_i (ren_i),
 
-      .aval_i (vs_i),
+      .aval_i (~inited || vs_i),
       .addr_i (bs ? BBASE : ABASE),
       .rdy_i (de_i),
       .data_o (data_o),
