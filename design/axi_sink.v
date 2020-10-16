@@ -5,6 +5,7 @@ module axi_sink #(
 ) (
    input clk_i,
    input rst_ni,
+   input srst_i,
 
    input en_i,
 
@@ -67,7 +68,7 @@ module axi_sink #(
       .BURST (TRANS)
    ) i_wfifo (
       .clk_i (clk_i),
-      .srst_i (aval_i),
+      .srst_i (srst_i),
       .in_val_i (wfval),
       .in_data_i (wfdata),
       .in_rdy_o (wfrdy),

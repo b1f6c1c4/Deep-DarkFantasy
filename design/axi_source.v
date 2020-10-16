@@ -5,6 +5,7 @@ module axi_source #(
 ) (
    input clk_i,
    input rst_ni,
+   input srst_i,
 
    input en_i,
 
@@ -44,7 +45,7 @@ module axi_source #(
       .WIDTH (AXI)
    ) i_rfifo1 (
       .clk_i (clk_i),
-      .srst_i (aval_i),
+      .srst_i (srst_i),
       .in_val_i (m_axi_rvalid),
       .in_data_i (m_axi_rdata),
       .in_rdy_o (m_axi_rready),
@@ -74,7 +75,7 @@ module axi_source #(
       .WIDTH (WIDTH)
    ) i_rfifo2 (
       .clk_i (clk_i),
-      .srst_i (aval_i),
+      .srst_i (srst_i),
       .in_val_i (rfval2),
       .in_data_i (rfdata2),
       .in_rdy_o (rfrdy2),
