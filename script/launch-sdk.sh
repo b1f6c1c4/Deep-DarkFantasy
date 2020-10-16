@@ -18,5 +18,5 @@ finish() {
 }
 trap finish EXIT
 
-"$SDK/bin/xsct" "../../../$TCL" 2>&1 | tee "../../$LOG"
+"$VITIS/bin/xsct" "../../../$TCL" 2>&1 | tee "../../$LOG"
 trap - EXIT

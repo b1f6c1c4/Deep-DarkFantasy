@@ -1,10 +1,12 @@
-VIVADO?=/opt/xilinx/Vivado/2018.2
-SDK?=/opt/xilinx/SDK/2018.2
-BOOTGEN?=bootgen
+VIVADO?=/opt/Xilinx/Vivado/2020.1
+VITIS?=/opt/Xilinx/Vitis/2020.1
 DESIGN=$(wildcard design/*.v)
 CONSTR=$(wildcard constr/*.xdc)
 XCI=$(patsubst ip/%.xci,%,$(wildcard ip/*.xci))
 FONT?=/usr/share/fonts/TTF/Consolas-Regular.ttf
+
+export VIVADO
+export VITIS
 
 PART=xc7z020clg400-1
 export PART
@@ -64,7 +66,7 @@ build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf: script/fsbl-sdk.tcl build/system.hdf
 	./script/launch-sdk.sh $<
 
 build/BOOT.bin: script/fsbl.bif build/fsbl/fsbl.sdk/fsbl/Release/fsbl.elf build/output.bit
-	$(SDK)/bin/bootgen -arch zynq -image $< -w -o build/BOOT.bin
+	$(VITIS)/bin/bootgen -arch zynq -image $< -w -o build/BOOT.bin
 
 build/overlay/node_modules: script/overlay/package.json script/overlay/package-lock.json
 	mkdir -p build/overlay/

@@ -54,9 +54,9 @@ You can follow these steps get *Deep:* Dark-Fantasy running:
 
 **If the default settings don't work for you for some reason, you should try build the project from source code.**
 
-Note: You need Xilinx Vivado (2018.2), `make`, `bash`, `node`, `npm`, and `awk` to generate the bitstream file.
+Note: You need Xilinx Vivado (2020.1), `make`, `bash`, `node`, `npm`, and `awk` to generate the bitstream file.
 You also need a ttf font for the overlay number display.
-Futhermore, you need Xilinx SDK (2018.2), `make`, `bash` to generate the bootable image.
+Futhermore, you need Xilinx Vitis (2020.1), `make`, `bash` to generate the bootable image.
 
 ### Step 1: Get the source code
 
@@ -136,8 +136,8 @@ Multicore won't help.
 export FONT=/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf
 # Specify your Xilinx Vivado installation
 # Specify your Xilinx SDK installation
-export VIVODO=/opt/xilinx/Vivado/2018.2
-export SDK=/opt/xilinx/SDK/2018.2
+export VIVODO=/opt/Xilinx/Vivado/2020.1
+export VITIS=/opt/Xilinx/Vitis/2020.1
 # Perform synthsizing, implementation, bitstream creation, boot image creation.
 # This may take a while (15~25min), so be patient
 make -j8
