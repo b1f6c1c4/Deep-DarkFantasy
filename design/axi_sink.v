@@ -65,7 +65,7 @@ module axi_sink #(
    wire [AXI-1:0] wd2;
    fifo #(
       .WIDTH (AXI),
-      .BURST (TRANS)
+      .BURST (TRANS - 1)
    ) i_wfifo (
       .clk_i (clk_i),
       .srst_i (srst_i),
