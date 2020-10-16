@@ -81,16 +81,49 @@ module overlay #(
       {pat_r, pat_rr, pat_rrr, pat_rrrr, pat_rrrrr} <= {pat, pat_r, pat_rr, pat_rrr, pat_rrrr};
    end
 
+   reg vs_r, bs;
+   wire vs_rise = ~vs_r && vin_vs_i;
+   always @(posedge vin_clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         vs_r <= 0;
+         bs <= 0;
+      end else begin
+         vs_r <= vin_vs_i;
+         bs <= bs ^ vs_rise;
+      end
+   end
+
+   reg inited;
+   always @(posedge vin_clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         inited <= 0;
+      end else if (vin_vs_i) begin
+         inited <= 1;
+      end
+   end
+
+   reg [3:0] srst_cnt;
+   always @(posedge vin_clk_i, negedge rst_ni) begin
+      if (~rst_ni) begin
+         srst_cnt <= 4'd15;
+      end else if (vs_rise) begin
+         srst_cnt <= 4'd15;
+      end else if (|srst_cnt) begin
+         srst_cnt <= srst_cnt - 1;
+      end
+   end
+
    axi_source #(
       .WIDTH (8),
       .SIZE (H_WIDTH * V_HEIGHT)
    ) i_source (
       .clk_i (vin_clk_i),
       .rst_ni (rst_ni),
+      .srst_i (~rst_ni || |srst_cnt),
 
       .en_i (1),
 
-      .aval_i (vin_vs_i),
+      .aval_i (~inited || vin_vs_i),
       .addr_i (BASE),
       .rdy_i (vin_de_i),
       .data_o (pat),

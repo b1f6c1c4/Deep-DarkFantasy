@@ -78,14 +78,14 @@ module axi_delayer #(
       end
    end
 
-   reg [3:0] cnt;
+   reg [3:0] srst_cnt;
    always @(posedge clk_i, negedge rst_ni) begin
       if (~rst_ni) begin
-         cnt <= 4'd15;
+         srst_cnt <= 4'd15;
       end else if (vs_rise) begin
-         cnt <= 4'd15;
-      end else if (|cnt) begin
-         cnt <= cnt - 1;
+         srst_cnt <= 4'd15;
+      end else if (|srst_cnt) begin
+         srst_cnt <= srst_cnt - 1;
       end
    end
 
@@ -97,7 +97,7 @@ module axi_delayer #(
    ) i_sink (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
-      .srst_i (~rst_ni || |cnt),
+      .srst_i (~rst_ni || |srst_cnt),
 
       .en_i (wen_i),
 
@@ -135,7 +135,7 @@ module axi_delayer #(
    ) i_source (
       .clk_i (clk_i),
       .rst_ni (rst_ni),
-      .srst_i (~rst_ni || |cnt),
+      .srst_i (~rst_ni || |srst_cnt),
 
       .en_i (ren_i),
 
